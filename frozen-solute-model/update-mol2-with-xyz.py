@@ -6,9 +6,9 @@ import sys
 import rdkit.Chem.rdmolfiles
 
 assert len(sys.argv) == 4, (sys.argv, len(sys.argv))
-assert sys.argv[1].endswith('mol2'), sys.argv[1]
-assert sys.argv[2].endswith('xyz'), sys.argv[2]
-assert sys.argv[3].endswith('mol2'), sys.argv[3]
+assert sys.argv[1].endswith("mol2"), sys.argv[1]
+assert sys.argv[2].endswith("xyz"), sys.argv[2]
+assert sys.argv[3].endswith("mol2"), sys.argv[3]
 
 print("WARNING: DISTANCE UNCHECKED")
 
@@ -28,7 +28,7 @@ with (
         new_x, new_y, new_z = float(new_x_str), float(new_y_str), float(new_z_str)
         line_list = line.split(maxsplit=5)
         assert (
-                len(line_list[5]) == 30
+            len(line_list[5]) == 30
         ), f"incorrect length {len(line_list[5])}"  # including newline
         assert xyz_type in line_list[1], f"{xyz_type} not in {line_list[1]}"
         old_x, old_y, old_z = (
@@ -55,16 +55,12 @@ with (
         output_file.write(line)
 
 input_line_count = (
-    subprocess.run(
-        ["wc", "-l", sys.argv[1]], capture_output=True, check=True
-    )
+    subprocess.run(["wc", "-l", sys.argv[1]], capture_output=True, check=True)
     .stdout.decode("utf-8")
     .split()[0]
 )
 output_line_count = (
-    subprocess.run(
-        ["wc", "-l", sys.argv[3]], capture_output=True, check=True
-    )
+    subprocess.run(["wc", "-l", sys.argv[3]], capture_output=True, check=True)
     .stdout.decode("utf-8")
     .split()[0]
 )
