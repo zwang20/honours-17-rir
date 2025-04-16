@@ -5,7 +5,7 @@ import sys
 
 import rdkit.Chem.rdmolfiles
 
-HOSTNAME = "katana2"
+HOSTNAME = "katana1"
 
 con = sqlite3.connect("frozen_solute_model_new.db")
 cur = con.cursor()
