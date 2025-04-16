@@ -5,7 +5,7 @@ import sys
 
 import rdkit.Chem.rdmolfiles
 
-HOSTNAME = "katana"
+HOSTNAME = "katana2"
 
 con = sqlite3.connect("frozen_solute_model_new.db")
 cur = con.cursor()
@@ -148,7 +148,7 @@ subprocess.run(
     ]
 )
 
-subprocess.run(["killall", "iqmol"])
+subprocess.run(["killall", "iqmol"], check=False)
 
 cur.execute(
     f"INSERT INTO runs VALUES ('{molecule_id}', 'FrozenMinEquilCENSO3', 'Running', {local_path}, '{HOSTNAME}', '{REMOTE_PATH}');"
