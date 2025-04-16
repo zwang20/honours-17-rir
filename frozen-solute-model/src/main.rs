@@ -88,10 +88,15 @@ enum RunType {
     FrozenMinEquilCENSO3,
     FrozenForwardCENSO,
     FrozenForwardCENSO3,
+    FrozenForwardCENSO50,
+    FrozenForwardCENSO51,
     FrozenReversedCENSO,
     FrozenReversedCENSO3,
+    FrozenReversedCENSO50,
+    FrozenReversedCENSO51,
     FrozenBarCENSO,
     FrozenBarCENSO3,
+    FrozenBarCENSO5,
     CREST,
     CENSO,
     VacuumCREST,
@@ -102,22 +107,8 @@ enum RunType {
 impl RunType {
     fn get_resource_type(&self) -> RunResourceType {
         match self {
-            RunType::RelaxedMinEquilGAFF
-            | RunType::RelaxedBarGAFF
-            | RunType::FrozenMinEquilCENSO
-            | RunType::FrozenMinEquilCENSO3
-            | RunType::FrozenForwardCENSO
-            | RunType::FrozenForwardCENSO3
-            | RunType::FrozenReversedCENSO
-            | RunType::FrozenReversedCENSO3
-            | RunType::FrozenBarCENSO
-            | RunType::FrozenBarCENSO3
-            | RunType::CREST
-            | RunType::CENSO
-            | RunType::VacuumCREST
-            | RunType::VacuumCENSO
-            | RunType::ORCA => RunResourceType::Cpu,
             RunType::RelaxedForwardGAFF | RunType::RelaxedReversedGAFF => RunResourceType::Gpu,
+            _ => RunResourceType::Cpu,
         }
     }
 }
@@ -673,7 +664,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             &format!("{:?}", run.remote_host),
                         ])?;
                     }
-                    RunType::FrozenForwardCENSO3 | RunType::FrozenReversedCENSO3 => {
+                    RunType::FrozenForwardCENSO3 | RunType::FrozenReversedCENSO3 | RunType::FrozenForwardCENSO50 | RunType::FrozenForwardCENSO51 | RunType::FrozenReversedCENSO50 | RunType::FrozenReversedCENSO51 => {
                         let mut statement = connection.prepare(&format!(
                             "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'FrozenMinEquilCENSO3'",
                             run.compound_id,
@@ -695,23 +686,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         copy("fep.tcl", &format!("data/{}/fep.tcl", run.local_path))?;
 
                         // run prod script
-                        match &run.run_type {
-                            RunType::FrozenForwardCENSO3 => run_program(vec![
-                                "python",
-                                "prod.frozen.forward.py",
-                                &run.compound_id,
-                                &run.local_path.to_string(),
-                                &format!("{:?}", run.remote_host),
-                            ])?,
-                            RunType::FrozenReversedCENSO3 => run_program(vec![
-                                "python",
-                                "prod.frozen.reversed.py",
-                                &run.compound_id,
-                                &run.local_path.to_string(),
-                                &format!("{:?}", run.remote_host),
-                            ])?,
-                            _ => panic!(),
-                        }
+                        run_program(vec![
+                            "python",
+                            "prod.frozen.py",
+                            &run.compound_id,
+                            &run.local_path.to_string(),
+                            &format!("{:?}", run.remote_host),
+                            &format!("{:?}", run.run_type)
+                        ])?;
                     }
                     RunType::ORCA => {
                         let mut statement = connection.prepare(&format!(
@@ -874,7 +856,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }*/
 
-        /*{
+        {
             let mut statement = connection.prepare(
                 "\
                     SELECT * FROM molecules \
@@ -902,7 +884,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Err(_) => {}
             }
-        }*/
+        }
         {
             let mut statement = connection.prepare(
                 "\
