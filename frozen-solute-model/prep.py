@@ -123,5 +123,5 @@ else:
     # assuming gadi
     # sr, normal, sl, bw
     # sapphire rapids, norma, sky lake, broad well
-    with  open(f"data/{local_path}/{local_path}", "w", encoding="utf-8") as f:
-        f.write(gadi_min_equil.format(queue='normalbw'))
+    with open(f"data/{local_path}/{local_path}", "w", encoding="utf-8") as f:
+        f.write(gadi_min_equil.format(queue="normalbw"))
