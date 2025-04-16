@@ -357,7 +357,7 @@ cd "${{PBS_O_WORKDIR}}/${{PBS_ARRAY_INDEX}}"
 """
 
 # solvation = 'SMD(WATER)'
-orca_inp_template = """! M062X {basis} FREQ
+orca_inp_template = """! {functional} {basis} FREQ
 * xyzfile 0 1 {input}
 """
 
