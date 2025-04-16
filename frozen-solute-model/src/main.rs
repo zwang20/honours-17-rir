@@ -102,6 +102,7 @@ enum RunType {
     VacuumCREST,
     VacuumCENSO,
     ORCA,
+    ORCAr2SCAN3c,
 }
 
 impl RunType {
@@ -486,7 +487,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         || ((katana_cpu_queue_length < 10)
                         && ((run.run_type == RunType::CREST)
                         || (run.run_type == RunType::VacuumCREST)
-                        || (run.run_type == RunType::ORCA)))
+                        || (run.run_type == RunType::ORCA) || (run.run_type == RunType::ORCAr2SCAN3c)))
                     {
                         let output = connection.execute(
                             &format!(
@@ -497,9 +498,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         );
                         println!("pick remote host {:?}", output);
                         katana_cpu_queue_length += 1;
-                    } else if (katana_gpu_queue_length < 5)
+                    } else if ((katana_gpu_queue_length < 5)
                         && ((run.run_type == RunType::RelaxedForwardGAFF)
-                        || (run.run_type == RunType::RelaxedReversedGAFF))
+                        || (run.run_type == RunType::RelaxedReversedGAFF)))
+                         || ((katana_cpu_queue_length < 10) && (run.run_type == RunType::ORCA) || (run.run_type == RunType::ORCAr2SCAN3c))
                     {
                         let output = connection.execute(
                             &format!(
@@ -536,7 +538,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         );
                         println!("pick remote host {:?}", output);
                         katana2_cpu_queue_length += 1;
-                    } else if (setonix_queue_length < 10)
+                    } else if (setonix_queue_length < 1)
                         && ((run.run_type == RunType::VacuumCENSO)
                         || (run.run_type == RunType::FrozenForwardCENSO3)
                         || (run.run_type == RunType::FrozenReversedCENSO3))
@@ -695,7 +697,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             &format!("{:?}", run.run_type)
                         ])?;
                     }
-                    RunType::ORCA => {
+                    RunType::ORCA | RunType::ORCAr2SCAN3c => {
                         let mut statement = connection.prepare(&format!(
                             "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'CENSO'",
                             run.compound_id,
@@ -741,7 +743,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             "python",
                             "orca.py",
                             &format!("{}", run.local_path),
-                            "katana",
+                            &format!("{:?}", run.remote_host),
+                            match &run.run_type {
+                                RunType::ORCA => "M062X",
+                                RunType::ORCAr2SCAN3c => "r2SCAN-3c",
+                                run_type => todo!("{:?}", run_type)
+                            },
                         ])?;
                     }
                     _ => todo!("{:?}", run.run_type),
@@ -826,6 +833,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Err(_) => {}
             }
         }
+        for _ in 1..10 {
+            // ORCAr2SCAN3c
+            let mut statement = connection.prepare(
+                "\
+                    SELECT * FROM molecules \
+                    WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3c') \
+                    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
+                    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'VacuumCENSO' AND status == 'Received') \
+                ",
+            )?;
+
+            match serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+            {
+                Ok(molecule) => {
+                    let query = format!(
+                        "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                        molecule?.compound_id,
+                        RunType::ORCAr2SCAN3c,
+                        StatusType::Planned,
+                        RemoteHostType::localhost,
+                        "/dev/null/"
+                    );
+                    println!("{}", query);
+                    connection.execute(&query, [])?;
+                }
+                Err(_) => {}
+            }
+        }
         /*{
             // CREST
             let mut statement = connection.prepare(
@@ -856,7 +893,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }*/
 
-        {
+        /*{
             let mut statement = connection.prepare(
                 "\
                     SELECT * FROM molecules \
@@ -884,7 +921,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Err(_) => {}
             }
-        }
+        }*/
         {
             let mut statement = connection.prepare(
                 "\
