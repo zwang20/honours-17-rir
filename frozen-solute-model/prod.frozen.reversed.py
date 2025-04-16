@@ -21,7 +21,7 @@ assert mobley_id.startswith("mobley_")
 local_path = sys.argv[2]
 assert int(local_path) >= 0
 hostname = sys.argv[3]
-assert hostname in ('katana', 'katana2', 'setonix')
+assert hostname in ("katana", "katana2", "setonix")
 
 # get size
 with open(f"data/{local_path}/{mobley_id}.pdb", encoding="utf-8") as f:
@@ -44,10 +44,10 @@ with open(f"data/{local_path}/prod.namd", "w", encoding="utf-8") as f:
         )
     )
 
-if hostname in ('katana', 'katana2'):
+if hostname in ("katana", "katana2"):
     with open(f"data/{local_path}/{local_path}", "w", encoding="utf-8") as f:
         f.write(katana_prod.format())
-elif hostname == 'setonix':
+elif hostname == "setonix":
     with open(f"data/{local_path}/{local_path}", "w", encoding="utf-8") as f:
         f.write(setonix_prod.format())
 else:
