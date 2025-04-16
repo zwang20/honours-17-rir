@@ -21,8 +21,8 @@ with open(file_name) as f:
     assert len(lines) == num_atoms
 
 # write file
-with open(file_name, 'w') as f:
-    f.write(f'{num_atoms}\n')
-    f.write(f'{remarks}\n')
+with open(file_name, "w") as f:
+    f.write(f"{num_atoms}\n")
+    f.write(f"{remarks}\n")
     for line in lines:
         f.write(f"{line}\n")
