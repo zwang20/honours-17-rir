@@ -32,8 +32,14 @@ print(vacuum_crest_path)
 os.makedirs("data/{}".format(local_path), exist_ok=True)
 
 # copy file
-subprocess.run(['cp', f"data/{vacuum_crest_path}/crest_conformers.xyz", f"data/{local_path}/crest_conformers.xyz"],
-               check=True)
+subprocess.run(
+    [
+        "cp",
+        f"data/{vacuum_crest_path}/crest_conformers.xyz",
+        f"data/{local_path}/crest_conformers.xyz",
+    ],
+    check=True,
+)
 
 cur.execute(
     f"INSERT INTO runs VALUES ('{molecule_id}', 'VacuumCENSO', 'Received', {local_path}, 'localhost', '/data/michael/misc/17-rir/frozen-solute-model/data/{local_path}/');"
