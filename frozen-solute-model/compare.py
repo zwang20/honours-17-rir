@@ -36,7 +36,7 @@ molecules = cur.execute(
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'FrozenForwardCENSO3' AND status = 'Received') \
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'FrozenReversedCENSO3' AND status = 'Received') \
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'FrozenBarCENSO3' AND status = 'Received') \
-    AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'ORCA' AND status = 'Received') "
+    AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'ORCAr2SCAN3c' AND status = 'Received') "
 ).fetchall()
 # print(molecules[1])
 d = dict()
@@ -44,7 +44,7 @@ d = dict()
 for compound_id, smiles, iupac, experimental, _, mobley, _, _, _, _, _, _ in molecules:
 
     orca_path = cur.execute(
-        f"SELECT local_path FROM runs WHERE {compound_id = } AND run_type = 'ORCA' LIMIT 1"
+        f"SELECT local_path FROM runs WHERE {compound_id = } AND run_type = 'ORCAr2SCAN3c' LIMIT 1"
     ).fetchone()[0]
     censo = (
         float(
@@ -192,4 +192,4 @@ print(
     "id;smiles;iupac;experimental;mobley;relaxed_forward_gaff;relaxed_reversed_gaff;relaxed_hysteresis_gaff;relaxed_bar_gaff;frozen_forward_censo;frozen_reversed_censo;frozen_hysteresis_censo;frozen_bar_censo;sp_censo;sp_vacuum_censo;correction;corrected_frozen_bar_censo;relaxed_forward_gaff2;relaxed_reversed_gaff2;relaxed_hysteresis_gaff2;relaxed_bar_gaff2;frozen_forward_gaff2;frozen_reversed_gaff2;frozen_hysteresis_gaff2;frozen_bar_gaff2"
 )
 for k, v in d.items():
-    print(f"{k};{';'.join(v)}")
+    print(f"{';'.join(v)}")
