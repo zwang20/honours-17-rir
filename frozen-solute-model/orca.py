@@ -7,13 +7,15 @@ from common import katana_orca_template
 
 # INSERT 1828
 
-# usage: orca.py <local_path> <remote_host>
-assert len(sys.argv) == 3, sys.argv
+# usage: orca.py <local_path> <remote_host> <functional>
+assert len(sys.argv) == 4, sys.argv
 
 local_path = int(sys.argv[1])
 hostname = sys.argv[2]
+functional = sys.argv[3]
 
 assert hostname in ("katana",)
+assert functional in ("M062X", "r2SCAN-3c")
 
 # basis = "6-31G(d)"
 # with open(f"data/{local_path}/censo.xyz") as f:
@@ -25,10 +27,10 @@ assert hostname in ("katana",)
 basis = "DEF2-TZVP"
 
 with open(f"data/{local_path}/censo.inp", "w") as f:
-    f.write(orca_inp_template.format(basis=basis, input="censo.xyz"))
+    f.write(orca_inp_template.format(functional=functional, basis=basis, input="censo.xyz"))
 
 with open(f"data/{local_path}/vacuum_censo.inp", "w") as f:
-    f.write(orca_inp_template.format(basis=basis, input="vacuum_censo.xyz"))
+    f.write(orca_inp_template.format(functional=functional, basis=basis, input="vacuum_censo.xyz"))
 
 if hostname in ("katana"):
     with open(f"data/{local_path}/{local_path}", "w") as f:
