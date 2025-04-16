@@ -24,10 +24,6 @@
     "job_state": "RUNNING"
   },
   {
-    "name": "7173",
-    "job_state": "RUNNING"
-  },
-  {
     "name": "7174",
     "job_state": "RUNNING"
   },
@@ -76,10 +72,6 @@
     "job_state": "RUNNING"
   },
   {
-    "name": "7187",
-    "job_state": "COMPLETED"
-  },
-  {
     "name": "7188",
     "job_state": "RUNNING"
   },
@@ -89,14 +81,6 @@
   },
   {
     "name": "7190",
-    "job_state": "RUNNING"
-  },
-  {
-    "name": "7191",
-    "job_state": "COMPLETED"
-  },
-  {
-    "name": "7193",
     "job_state": "RUNNING"
   },
   {
@@ -177,10 +161,6 @@
   },
   {
     "name": "7219",
-    "job_state": "RUNNING"
-  },
-  {
-    "name": "7220",
     "job_state": "COMPLETED"
   },
   {
