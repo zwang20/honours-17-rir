@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$/../../../FreeSolv" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../.." vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../99-pkgbuilds/censo" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../99-pkgbuilds/iqmol" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../99-pkgbuilds/iqmol-git" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../99-pkgbuilds/openbabel-git" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../99-pkgbuilds/python-parmed" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../99-pkgbuilds/python-pymbar" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../99-pkgbuilds/xtb-git" vcs="Git" />
+  </component>
+</project>
