@@ -11,8 +11,9 @@ import subprocess
 from common import get_energy_from_fepout
 
 print(
-    "id;smiles;iupac;experimental;mobley;relaxed_forward_gaff;relaxed_reversed_gaff;relaxed_hysteresis_gaff;relaxed_bar_gaff;frozen_forward_censo;frozen_reversed_censo;frozen_hysteresis_censo;frozen_bar_censo;relaxed_forward_gaff2;relaxed_reversed_gaff2;relaxed_hysteresis_gaff2;relaxed_bar_gaff2;frozen_forward_gaff2;frozen_reversed_gaff2;frozen_hysteresis_gaff2;frozen_bar_gaff2"
+    "id;smiles;iupac;experimental;mobley;relaxed_forward_gaff;relaxed_reversed_gaff;relaxed_hysteresis_gaff;relaxed_bar_gaff;frozen_forward_censo;frozen_reversed_censo;frozen_hysteresis_censo;frozen_bar_censo;censo;vacuum_censo;correction;frozen_bar_censo+correction;relaxed_forward_gaff2;relaxed_reversed_gaff2;relaxed_hysteresis_gaff2;relaxed_bar_gaff2;frozen_forward_gaff2;frozen_reversed_gaff2;frozen_hysteresis_gaff2;frozen_bar_gaff2"
 )
+
 
 gaff2 = dict()
 with open("gaff2.csv") as f:
@@ -73,7 +74,7 @@ for compound_id, smiles, iupac, experimental, _, mobley, _, _, _, _, _, _ in mol
         )
         * 627.509474
     )
-    correction = vacuum_censo - censo
+    correction = censo - vacuum_censo
 
     relaxed_forward_path = cur.execute(
         f"SELECT local_path FROM runs WHERE {compound_id = } AND run_type = 'RelaxedForwardGAFF' LIMIT 1"
@@ -156,6 +157,7 @@ for compound_id, smiles, iupac, experimental, _, mobley, _, _, _, _, _, _ in mol
         map(
             str,
             (
+                compound_id,
                 smiles,
                 iupac,
                 experimental,
