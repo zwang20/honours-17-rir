@@ -113,10 +113,10 @@ for i in cur.execute(
     print(i)
 
 print("=" * 10, "running ls", "=" * 10)
-os.system(f"ls data/{local_path}")
+os.system(f"ls data/{local_path}/")
 print("=" * 10, "=" * 10, "=" * 10)
 
-rm = f"rm -rf data/{local_path}"
+rm = f"rm -rf data/{local_path}/"
 statement = f"DELETE FROM runs WHERE local_path={local_path};"
 assert input(f"Execute command `{rm}` AND statement `{statement}` ? (y/N): ") == "y"
 os.system(rm)
