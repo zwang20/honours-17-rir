@@ -309,6 +309,22 @@ yes | /srv/scratch/${{USER}}/.censo/bin/censo --cleanup_all > censo_cleanup.out
 /srv/scratch/${{USER}}/.censo/bin/censo -i crest_conformers.xyz --maxcores {ncpus} -O 1 > censo.out
 """
 
+gadi_censo = """#!/usr/bin/bash
+#PBS -l walltime=12:00:00
+#PBS -l mem={mem}Gb
+#PBS -l ncpus={ncpus}
+#PBS -q normalsr
+#PBS -l storage=scratch/cw7
+#PBS -l wd
+#PBS -j oe
+set -e
+
+module add orca
+module add python
+
+
+"""
+
 setonix_censo = """#!/usr/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
