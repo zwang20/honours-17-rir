@@ -326,20 +326,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &mut serde_json::from_str::<Vec<KatanaJob>>(&std::fs::read_to_string(
                 "server/katana2.json",
             )?)
-                .unwrap_or_default()
-                .into_iter()
-                .map(|i| i.Job_Name)
-                .collect::<Vec<u32>>(),
+            .unwrap_or_default()
+            .into_iter()
+            .map(|i| i.Job_Name)
+            .collect::<Vec<u32>>(),
         );
 
         jobs.append(
             &mut serde_json::from_str::<Vec<KatanaJob>>(&std::fs::read_to_string(
                 "server/katana.json",
             )?)
-                .unwrap_or_default()
-                .into_iter()
-                .map(|i| i.Job_Name)
-                .collect::<Vec<u32>>(),
+            .unwrap_or_default()
+            .into_iter()
+            .map(|i| i.Job_Name)
+            .collect::<Vec<u32>>(),
         );
     }
 
@@ -375,7 +375,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }*/
 
     // setonix
-    {
+    /*{
         println!("Updating setonix");
         let setonix_raw_json = std::fs::File::create("server/setonix_raw.json")?;
         let output = std::process::Command::new("ssh")
@@ -403,7 +403,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(|i| i.name.parse::<u32>().unwrap())
                 .collect::<Vec<u32>>(),
         );
-    }
+    }*/
 
     jobs.sort_unstable(); // they are supposed to be unique anyway
     println!("Jobs: {:?}", jobs);
@@ -482,12 +482,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if run.remote_host == RemoteHostType::localhost {
                     if ((katana_cpu_queue_length < 5)
                         && ((run.run_type == RunType::FrozenForwardCENSO3)
-                        || (run.run_type == RunType::FrozenReversedCENSO3)
-                        || (run.run_type == RunType::RelaxedMinEquilGAFF)))
+                            || (run.run_type == RunType::FrozenReversedCENSO3)
+                            || (run.run_type == RunType::RelaxedMinEquilGAFF)))
                         || ((katana_cpu_queue_length < 10)
-                        && ((run.run_type == RunType::CREST)
-                        || (run.run_type == RunType::VacuumCREST)
-                        || (run.run_type == RunType::ORCA) || (run.run_type == RunType::ORCAr2SCAN3c)))
+                            && ((run.run_type == RunType::CREST)
+                                || (run.run_type == RunType::VacuumCREST)
+                                || (run.run_type == RunType::ORCA)
+                                || (run.run_type == RunType::ORCAr2SCAN3c)
+                                || (run.run_type == RunType::FrozenMinEquilCENSO3)))
                     {
                         let output = connection.execute(
                             &format!(
@@ -498,10 +500,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         );
                         println!("pick remote host {:?}", output);
                         katana_cpu_queue_length += 1;
-                    } else if ((katana_gpu_queue_length < 5)
+                    } else if (katana_gpu_queue_length < 5)
                         && ((run.run_type == RunType::RelaxedForwardGAFF)
-                        || (run.run_type == RunType::RelaxedReversedGAFF)))
-                         || ((katana_cpu_queue_length < 10) && (run.run_type == RunType::ORCA) || (run.run_type == RunType::ORCAr2SCAN3c))
+                            || (run.run_type == RunType::RelaxedReversedGAFF))
                     {
                         let output = connection.execute(
                             &format!(
@@ -514,7 +515,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         katana_gpu_queue_length += 1;
                     } else if (katana2_gpu_queue_length < 5)
                         && ((run.run_type == RunType::RelaxedForwardGAFF)
-                        || (run.run_type == RunType::RelaxedReversedGAFF))
+                            || (run.run_type == RunType::RelaxedReversedGAFF))
                     {
                         let query = format!(
                             "UPDATE runs SET remote_path = '/srv/scratch/z5382435/.automated/{}/', remote_host = 'katana2' WHERE local_path = {}",
@@ -525,9 +526,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         katana2_gpu_queue_length += 1;
                     } else if ((katana2_cpu_queue_length < 5)
                         && ((run.run_type == RunType::FrozenForwardCENSO3)
-                        || (run.run_type == RunType::FrozenReversedCENSO3)))
+                            || (run.run_type == RunType::FrozenReversedCENSO3)))
                         || ((katana2_cpu_queue_length < 10)
-                        && (run.run_type == RunType::VacuumCREST))
+                            && ((run.run_type == RunType::VacuumCREST)
+                                || (run.run_type == RunType::FrozenMinEquilCENSO3)))
                     {
                         let output = connection.execute(
                             &format!(
@@ -538,7 +540,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         );
                         println!("pick remote host {:?}", output);
                         katana2_cpu_queue_length += 1;
-                    } else if (setonix_queue_length < 1)
+                    }
+                    /* else if (setonix_queue_length < 1)
                         && ((run.run_type == RunType::VacuumCENSO)
                         || (run.run_type == RunType::FrozenForwardCENSO3)
                         || (run.run_type == RunType::FrozenReversedCENSO3))
@@ -552,7 +555,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )?;
                         setonix_queue_length += 1;
                         println!("pick remote host setonix");
-                    } else {
+                    } */
+                    else {
                         println!("all queues busy, skipping");
                     }
                     break 'match_status;
@@ -666,7 +670,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             &format!("{:?}", run.remote_host),
                         ])?;
                     }
-                    RunType::FrozenForwardCENSO3 | RunType::FrozenReversedCENSO3 | RunType::FrozenForwardCENSO50 | RunType::FrozenForwardCENSO51 | RunType::FrozenReversedCENSO50 | RunType::FrozenReversedCENSO51 => {
+                    RunType::FrozenForwardCENSO3
+                    | RunType::FrozenReversedCENSO3
+                    | RunType::FrozenForwardCENSO50
+                    | RunType::FrozenForwardCENSO51
+                    | RunType::FrozenReversedCENSO50
+                    | RunType::FrozenReversedCENSO51 => {
                         let mut statement = connection.prepare(&format!(
                             "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'FrozenMinEquilCENSO3'",
                             run.compound_id,
@@ -694,7 +703,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             &run.compound_id,
                             &run.local_path.to_string(),
                             &format!("{:?}", run.remote_host),
-                            &format!("{:?}", run.run_type)
+                            &format!("{:?}", run.run_type),
                         ])?;
                     }
                     RunType::ORCA | RunType::ORCAr2SCAN3c => {
@@ -747,8 +756,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             match &run.run_type {
                                 RunType::ORCA => "M062X",
                                 RunType::ORCAr2SCAN3c => "r2SCAN-3c",
-                                run_type => todo!("{:?}", run_type)
+                                run_type => todo!("{:?}", run_type),
                             },
+                        ])?;
+                    }
+                    RunType::FrozenMinEquilCENSO3 => {
+                        run_program(vec![
+                            "python",
+                            "prep.frozen.py",
+                            &run.compound_id,
+                            &format!("{}", run.local_path),
+                            &format!("{:?}", run.remote_host),
                         ])?;
                     }
                     _ => todo!("{:?}", run.run_type),
@@ -800,17 +818,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Generating Jobs");
 
-
     if planned_cpu < 5 {
+        // frozen prep
+        {
+            let mut statement = connection.prepare(
+                " \
+                SELECT * FROM molecules \
+                WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenMinEquilCENSO3') \
+                AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
+                ORDER BY rotatable_bonds ASC LIMIT 1 \
+                ",
+            )?;
+            if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+                .next()
+                .ok_or(())
+            {
+                let query = format!(
+                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                    molecule?.compound_id,
+                    RunType::FrozenMinEquilCENSO3,
+                    StatusType::Planned,
+                    RemoteHostType::localhost,
+                    "/dev/null/"
+                );
+                println!("{}", query);
+                connection.execute(&query, [])?;
+            }
+        }
+
         for _ in 1..10 {
             // ORCA
             let mut statement = connection.prepare(
                 "\
-                    SELECT * FROM molecules \
-                    WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCA') \
-                    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
-                    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'VacuumCENSO' AND status == 'Received') \
-                    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenBarCENSO3' AND status == 'Received') \
+                SELECT * FROM molecules \
+                WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCA') \
+                AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
+                AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'VacuumCENSO' AND status == 'Received') \
+                AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenBarCENSO3' AND status == 'Received') \
                 ",
             )?;
 
@@ -845,8 +889,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             )?;
 
             match serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-            .next()
-            .ok_or(())
+                .next()
+                .ok_or(())
             {
                 Ok(molecule) => {
                     let query = format!(
