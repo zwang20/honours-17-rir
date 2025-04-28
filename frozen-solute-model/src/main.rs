@@ -82,8 +82,13 @@ enum RunResourceType {
 enum RunType {
     RelaxedMinEquilGAFF,
     RelaxedForwardGAFF,
+    RelaxedForwardGAFF50,
+    RelaxedForwardGAFF51,
     RelaxedReversedGAFF,
+    RelaxedReversedGAFF50,
+    RelaxedReversedGAFF51,
     RelaxedBarGAFF,
+    RelaxedBarGAFF5,
     FrozenMinEquilCENSO,
     FrozenMinEquilCENSO3,
     FrozenForwardCENSO,
@@ -108,7 +113,12 @@ enum RunType {
 impl RunType {
     fn get_resource_type(&self) -> RunResourceType {
         match self {
-            RunType::RelaxedForwardGAFF | RunType::RelaxedReversedGAFF => RunResourceType::Gpu,
+            RunType::RelaxedForwardGAFF
+            | RunType::RelaxedReversedGAFF
+            | RunType::RelaxedForwardGAFF50
+            | RunType::RelaxedForwardGAFF51
+            | RunType::RelaxedReversedGAFF50
+            | RunType::RelaxedReversedGAFF51 => RunResourceType::Gpu,
             _ => RunResourceType::Cpu,
         }
     }
@@ -409,7 +419,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Jobs: {:?}", jobs);
 
     // get gpu jobs
-    let mut statement = connection.prepare("SELECT * FROM runs WHERE run_type = 'RelaxedForwardGAFF' OR run_type = 'RelaxedReversedGAFF'")?;
+    let mut statement = connection.prepare("SELECT * FROM runs WHERE run_type LIKE 'RelaxedForwardGAFF%' OR run_type LIKE 'RelaxedReversedGAFF%'")?;
     let runs = serde_rusqlite::from_rows::<Run>(statement.query([])?);
     let mut gpu_jobs = vec![];
     for run in runs {
@@ -502,7 +512,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         katana_cpu_queue_length += 1;
                     } else if (katana_gpu_queue_length < 5)
                         && ((run.run_type == RunType::RelaxedForwardGAFF)
-                            || (run.run_type == RunType::RelaxedReversedGAFF))
+                            || (run.run_type == RunType::RelaxedReversedGAFF)
+                            || (run.run_type == RunType::RelaxedForwardGAFF50)
+                            || (run.run_type == RunType::RelaxedForwardGAFF51)
+                            || (run.run_type == RunType::RelaxedReversedGAFF50)
+                            || (run.run_type == RunType::RelaxedReversedGAFF51)
+                        )
                     {
                         let output = connection.execute(
                             &format!(
@@ -526,7 +541,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         katana2_gpu_queue_length += 1;
                     } else if ((katana2_cpu_queue_length < 5)
                         && ((run.run_type == RunType::FrozenForwardCENSO3)
-                            || (run.run_type == RunType::FrozenReversedCENSO3)))
+                            || (run.run_type == RunType::FrozenReversedCENSO3)
+                            || (run.run_type == RunType::RelaxedMinEquilGAFF)))
                         || ((katana2_cpu_queue_length < 10)
                             && ((run.run_type == RunType::VacuumCREST)
                                 || (run.run_type == RunType::FrozenMinEquilCENSO3)))
@@ -577,7 +593,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             break 'match_status;
                         }
                     }
-                    RunType::RelaxedForwardGAFF | RunType::RelaxedReversedGAFF => {
+                    RunType::RelaxedForwardGAFF
+                    | RunType::RelaxedReversedGAFF
+                    | RunType::RelaxedForwardGAFF50
+                    | RunType::RelaxedForwardGAFF51
+                    | RunType::RelaxedReversedGAFF50
+                    | RunType::RelaxedReversedGAFF51 => {
                         let mut statement = connection.prepare(&format!(
                             "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'RelaxedMinEquilGAFF'",
                             run.compound_id,
@@ -599,21 +620,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         copy("fep.tcl", &format!("data/{}/fep.tcl", run.local_path))?;
 
                         // run prod script
-                        match &run.run_type {
-                            RunType::RelaxedForwardGAFF => run_program(vec![
-                                "python",
-                                "prod.forward.py",
-                                &run.compound_id,
-                                &run.local_path.to_string(),
-                            ])?,
-                            RunType::RelaxedReversedGAFF => run_program(vec![
-                                "python",
-                                "prod.reversed.py",
-                                &run.compound_id,
-                                &run.local_path.to_string(),
-                            ])?,
-                            _ => panic!(),
-                        }
+                        run_program(vec![
+                            "python",
+                            "prod.relaxed.py",
+                            &run.compound_id,
+                            &run.local_path.to_string(),
+                            &format!("{:?}", run.remote_host),
+                            &format!("{:?}", run.run_type),
+                        ])?;
                     }
                     RunType::CREST | RunType::VacuumCREST => {
                         run_program(vec![
@@ -1112,6 +1126,103 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 connection.execute(&query, [])?;
             }
             Err(_) => {}
+        }
+    }
+
+    {
+        let mut statement = connection.prepare(
+            " \
+            SELECT * FROM molecules \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedForwardGAFF50') \
+            ORDER BY rotatable_bonds ASC LIMIT 1 \
+            ",
+        )?;
+        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+        {
+            let query = format!(
+                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                molecule?.compound_id,
+                RunType::RelaxedForwardGAFF50,
+                StatusType::Planned,
+                RemoteHostType::localhost,
+                "/dev/null/"
+            );
+            println!("{}", query);
+            connection.execute(&query, [])?;
+        }
+    }
+    {
+        let mut statement = connection.prepare(
+            " \
+            SELECT * FROM molecules \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedForwardGAFF51') \
+            ORDER BY rotatable_bonds ASC LIMIT 1 \
+            ",
+        )?;
+        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+        {
+            let query = format!(
+                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                molecule?.compound_id,
+                RunType::RelaxedForwardGAFF51,
+                StatusType::Planned,
+                RemoteHostType::localhost,
+                "/dev/null/"
+            );
+            println!("{}", query);
+            connection.execute(&query, [])?;
+        }
+    }
+    {
+        let mut statement = connection.prepare(
+        " \
+            SELECT * FROM molecules \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedReversedGAFF50') \
+            ORDER BY rotatable_bonds ASC LIMIT 1 \
+            ",
+        )?;
+        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+        {
+            let query = format!(
+                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                molecule?.compound_id,
+                RunType::RelaxedReversedGAFF50,
+                StatusType::Planned,
+                RemoteHostType::localhost,
+                "/dev/null/"
+            );
+            println!("{}", query);
+            connection.execute(&query, [])?;
+        }
+    }
+    {
+        let mut statement = connection.prepare(
+            " \
+            SELECT * FROM molecules \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedReversedGAFF51') \
+            ORDER BY rotatable_bonds ASC LIMIT 1 \
+            ",
+        )?;
+        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+        {
+            let query = format!(
+                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                molecule?.compound_id,
+                RunType::RelaxedReversedGAFF51,
+                StatusType::Planned,
+                RemoteHostType::localhost,
+                "/dev/null/"
+            );
+            println!("{}", query);
+            connection.execute(&query, [])?;
         }
     }
 
