@@ -124,7 +124,7 @@ alchVdWShiftCoeff    5.0
 alchDecouple         ON
 
 alchEquilSteps       100000
-set nSteps           1500000
+set nSteps           {steps}
 # set nSteps           2500000
 
 runFEP         {start:.2f} {end:.2f} {step:.2f}      $nSteps
@@ -225,9 +225,9 @@ set -e
 
 lscpu
 
-cd "${{PBS_O_WORKDIR}}"
+cd "$PBS_O_WORKDIR"
 
-/srv/scratch/${{USER}}/.namd_cuda/namd3 "+p$(nproc)" prod.namd > prod.log
+/srv/scratch/$USER/.namd_cuda/namd3 "+p$(nproc)" prod.namd > prod.log
 """
 
 setonix_prod = """#!/usr/bin/bash
