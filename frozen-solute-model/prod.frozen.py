@@ -35,17 +35,17 @@ run_type = sys.argv[4]
 
 match run_type:
     case "FrozenForwardCENSO3":
-        mode="ff"; start=0; end=1; step=0.05
+        mode="ff"; start=0; end=1; step=0.05; steps = 1500000
     case "FrozenReversedCENSO3":
-        mode="fr"; start=1; end=0; step=-0.05
+        mode="fr"; start=1; end=0; step=-0.05; steps = 1500000
     case "FrozenForwardCENSO50":
-        mode="ff"; start=0; end=0.5; step=0.05
+        mode="ff"; start=0; end=0.5; step=0.05; steps = 2500000
     case "FrozenForwardCENSO51":
-        mode="ff"; start=0.5; end=1; step=0.05
+        mode="ff"; start=0.5; end=1; step=0.05; steps = 2500000
     case "FrozenReversedCENSO50":
-        mode="fr"; start=1; end=0.5; step=-0.05
+        mode="fr"; start=1; end=0.5; step=-0.05; steps = 2500000
     case "FrozenReversedCENSO51":
-        mode="fr"; start=0.5; end=0; step=-0.05
+        mode="fr"; start=0.5; end=0; step=-0.05; steps = 2500000
     case default:
         raise NotImplementedError(f"case {default} not implemented")
 
@@ -65,7 +65,7 @@ with open(f"data/{local_path}/prod.namd", "w", encoding="utf-8") as f:
             margin=2.0,
             constraints=constraint_frozen.format(mobley_id=mobley_id),
             run=prod_run.format(
-                mobley_id=mobley_id, mode=mode, start=start, end=end, step=step,
+                mobley_id=mobley_id, mode=mode, start=start, end=end, step=step, steps=steps
             ),
         )
     )
