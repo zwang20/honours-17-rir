@@ -75,6 +75,7 @@ while True:
         continue
 
 try:
+    print("xyz")
     subprocess.run(
         [
             f"xvfb-run iqmol data/{xyz_path}/2_OPTIMIZATION.xyz He.xyz > xyz",
@@ -96,7 +97,7 @@ with open("xyz") as f:
         if not line:
             break
         k, v = line.split(maxsplit=1)
-        assert d[k] == v
+        assert d[k] == v, (k, d[k], v)
 
 subprocess.run(["killall", "iqmol"], check=False)
 
