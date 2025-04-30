@@ -516,8 +516,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             || (run.run_type == RunType::RelaxedForwardGAFF50)
                             || (run.run_type == RunType::RelaxedForwardGAFF51)
                             || (run.run_type == RunType::RelaxedReversedGAFF50)
-                            || (run.run_type == RunType::RelaxedReversedGAFF51)
-                        )
+                            || (run.run_type == RunType::RelaxedReversedGAFF51))
                     {
                         let output = connection.execute(
                             &format!(
@@ -530,7 +529,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         katana_gpu_queue_length += 1;
                     } else if (katana2_gpu_queue_length < 5)
                         && ((run.run_type == RunType::RelaxedForwardGAFF)
-                            || (run.run_type == RunType::RelaxedReversedGAFF))
+                            || (run.run_type == RunType::RelaxedReversedGAFF)
+                            || (run.run_type == RunType::RelaxedForwardGAFF50)
+                            || (run.run_type == RunType::RelaxedForwardGAFF51)
+                            || (run.run_type == RunType::RelaxedReversedGAFF50)
+                            || (run.run_type == RunType::RelaxedReversedGAFF51))
                     {
                         let query = format!(
                             "UPDATE runs SET remote_path = '/srv/scratch/z5382435/.automated/{}/', remote_host = 'katana2' WHERE local_path = {}",
@@ -605,7 +608,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ))?;
                         let min_equil_path = serde_rusqlite::from_rows::<Run>(statement.query([])?)
                             .next()
-                            .ok_or("No prep found")??
+                            .ok_or(format!("No prep found for {:?}", run))??
                             .local_path;
 
                         for suffix in [".prmtop", ".pdb", "_equil.coor", "_equil.vel", "_equil.xsc"]
