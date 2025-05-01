@@ -10,9 +10,9 @@ cur = con.cursor()
 
 res = cur.execute(
     "SELECT compound_id FROM molecules \
-    WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenBarCENSO') \
-    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenForwardCENSO' AND status = 'Received') \
-    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenReversedCENSO' AND status = 'Received') \
+    WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenBarCENSO3') \
+    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenForwardCENSO3' AND status = 'Received') \
+    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenReversedCENSO3' AND status = 'Received') \
     ORDER BY rotatable_bonds ASC, num_atoms ASC LIMIT 1"
 )
 
@@ -33,7 +33,7 @@ print(f"{local_path = }")
 res = cur.execute(
     f"SELECT local_path FROM runs \
     WHERE compound_id = '{compound_id}' \
-    AND run_type = 'FrozenForwardCENSO'"
+    AND run_type = 'FrozenForwardCENSO3'"
 )
 forward_path = int(res.fetchone()[0])
 print(f"{forward_path = }")
@@ -41,7 +41,7 @@ print(f"{forward_path = }")
 res = cur.execute(
     f"SELECT local_path FROM runs \
     WHERE compound_id = '{compound_id}' \
-    AND run_type = 'FrozenReversedCENSO'"
+    AND run_type = 'FrozenReversedCENSO3'"
 )
 reversed_path = int(res.fetchone()[0])
 print(f"{reversed_path = }")
@@ -70,7 +70,7 @@ subprocess.run(
 )
 
 cur.execute(
-    f"INSERT INTO runs VALUES ('{compound_id}', 'FrozenBarCENSO', 'Received', {local_path}, 'localhost', '/data/michael/misc/17-rir/frozen-solute-model/data/{local_path}/');"
+    f"INSERT INTO runs VALUES ('{compound_id}', 'FrozenBarCENSO3', 'Received', {local_path}, 'localhost', '/data/michael/misc/17-rir/frozen-solute-model/data/{local_path}/');"
 )
 con.commit()
 con.close()
