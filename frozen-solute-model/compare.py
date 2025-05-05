@@ -11,7 +11,7 @@ import subprocess
 from common import get_energy_from_fepout
 
 print(
-    "id;smiles;iupac;experimental;mobley;relaxed_forward_gaff;relaxed_reversed_gaff;relaxed_hysteresis_gaff;relaxed_bar_gaff;frozen_forward_censo;frozen_reversed_censo;frozen_hysteresis_censo;frozen_bar_censo;censo;vacuum_censo;correction;frozen_bar_censo+correction;relaxed_forward_gaff2;relaxed_reversed_gaff2;relaxed_hysteresis_gaff2;relaxed_bar_gaff2;frozen_forward_gaff2;frozen_reversed_gaff2;frozen_hysteresis_gaff2;frozen_bar_gaff2"
+    "id;smiles;iupac;experimental;mobley;relaxed_forward_gaff;relaxed_reversed_gaff;relaxed_hysteresis_gaff;relaxed_bar_gaff;frozen_forward_censo;frozen_reversed_censo;frozen_hysteresis_censo;frozen_bar_censo;censo;vacuum_censo;correction;rmsd;frozen_bar_censo+correction;relaxed_forward_gaff2;relaxed_reversed_gaff2;relaxed_hysteresis_gaff2;relaxed_bar_gaff2;frozen_forward_gaff2;frozen_reversed_gaff2;frozen_hysteresis_gaff2;frozen_bar_gaff2", flush=True
 )
 
 
@@ -75,6 +75,9 @@ for compound_id, smiles, iupac, experimental, _, mobley, _, _, _, _, _, _ in mol
         * 627.509474
     )
     correction = censo - vacuum_censo
+    rmsd = float(
+        subprocess.run(["python", "calculate_rmsd", f"data/{orca_path}/censo.xyz", f"data/{orca_path}/vacuum_censo.xyz"], check=True, capture_output=True).stdout.decode("utf-8")
+        )
 
     relaxed_forward_path = cur.execute(
         f"SELECT local_path FROM runs WHERE {compound_id = } AND run_type = 'RelaxedForwardGAFF' LIMIT 1"
@@ -173,6 +176,7 @@ for compound_id, smiles, iupac, experimental, _, mobley, _, _, _, _, _, _ in mol
                 censo,
                 vacuum_censo,
                 correction,
+                rmsd,
                 frozen_bar_censo + correction,
                 d2["r fwd"],
                 d2["r rev"],
@@ -185,11 +189,11 @@ for compound_id, smiles, iupac, experimental, _, mobley, _, _, _, _, _, _ in mol
             ),
         )
     )
-    print(";".join(d[compound_id]))
+    print(";".join(d[compound_id]), flush=True)
 
 # r fwd,r rev,r hist,r ave,r bar,r diff,f fwd,f rev,f hist,f ave,f bar,f diff
-print(
-    "id;smiles;iupac;experimental;mobley;relaxed_forward_gaff;relaxed_reversed_gaff;relaxed_hysteresis_gaff;relaxed_bar_gaff;frozen_forward_censo;frozen_reversed_censo;frozen_hysteresis_censo;frozen_bar_censo;sp_censo;sp_vacuum_censo;correction;corrected_frozen_bar_censo;relaxed_forward_gaff2;relaxed_reversed_gaff2;relaxed_hysteresis_gaff2;relaxed_bar_gaff2;frozen_forward_gaff2;frozen_reversed_gaff2;frozen_hysteresis_gaff2;frozen_bar_gaff2"
-)
-for k, v in d.items():
-    print(f"{';'.join(v)}")
+# print(
+#     "id;smiles;iupac;experimental;mobley;relaxed_forward_gaff;relaxed_reversed_gaff;relaxed_hysteresis_gaff;relaxed_bar_gaff;frozen_forward_censo;frozen_reversed_censo;frozen_hysteresis_censo;frozen_bar_censo;sp_censo;sp_vacuum_censo;correction;corrected_frozen_bar_censo;relaxed_forward_gaff2;relaxed_reversed_gaff2;relaxed_hysteresis_gaff2;relaxed_bar_gaff2;frozen_forward_gaff2;frozen_reversed_gaff2;frozen_hysteresis_gaff2;frozen_bar_gaff2"
+# )
+# for k, v in d.items():
+#     print(f"{';'.join(v)}")
