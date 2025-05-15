@@ -14,7 +14,7 @@ def main():
     # returns a path if invalid path is found, else None
 
     censo_paths = cur.execute(
-        "SELECT local_path FROM runs WHERE run_type = 'CENSO' AND status != 'Planned'"
+        "SELECT local_path FROM runs WHERE run_type = 'CENSO' AND status != 'Planned' AND status != 'Running'"
     ).fetchall()
     for i in censo_paths:
         censo_path = i[0]
@@ -37,10 +37,12 @@ def main():
     ).fetchall()
 
     vacuum_censo_paths = cur.execute(
-        "SELECT local_path FROM runs WHERE run_type = 'VacuumCENSO' AND status != 'Planned'"
+        "SELECT local_path FROM runs WHERE run_type = 'VacuumCENSO' AND status != 'Planned' AND status != 'Running'"
     ).fetchall()
     for i in vacuum_censo_paths:
         vacuum_censo_path = i[0]
+        if subprocess.run(["cat", f"data/{vacuum_censo_path}/2_OPTIMIZATION.xyz"], capture_output=True, check=False).returncode:
+            return vacuum_censo_path
         vacuum_censo_conf = (
             subprocess.run(
                 [
@@ -57,7 +59,7 @@ def main():
             return vacuum_censo_path
 
     relaxed_paths = cur.execute(
-        "SELECT local_path FROM runs WHERE run_type = 'RelaxedBarGAFF' AND status != 'Planned'"
+        "SELECT local_path FROM runs WHERE run_type LIKE 'RelaxedBarGAFF%' AND status != 'Planned'"
     ).fetchall()
 
     for i in relaxed_paths:
