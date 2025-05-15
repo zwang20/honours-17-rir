@@ -11,7 +11,7 @@ import subprocess
 from common import get_energy_from_fepout
 
 print(
-    "id;smiles;iupac;experimental;mobley;relaxed_forward_gaff;relaxed_reversed_gaff;relaxed_hysteresis_gaff;relaxed_bar_gaff;frozen_forward_censo;frozen_reversed_censo;frozen_hysteresis_censo;frozen_bar_censo;censo;vacuum_censo;correction;rmsd;frozen_bar_censo+correction;relaxed_forward_gaff2;relaxed_reversed_gaff2;relaxed_hysteresis_gaff2;relaxed_bar_gaff2;frozen_forward_gaff2;frozen_reversed_gaff2;frozen_hysteresis_gaff2;frozen_bar_gaff2", flush=True
+    "id;smiles;iupac;experimental;mobley;relaxed_forward_gaff;relaxed_reversed_gaff;relaxed_hysteresis_gaff;relaxed_bar_gaff;relaxed_bar_gaff5;frozen_forward_censo;frozen_reversed_censo;frozen_hysteresis_censo;frozen_bar_censo;censo;vacuum_censo;correction;rmsd;frozen_bar_censo+correction;relaxed_forward_gaff2;relaxed_reversed_gaff2;relaxed_hysteresis_gaff2;relaxed_bar_gaff2;frozen_forward_gaff2;frozen_reversed_gaff2;frozen_hysteresis_gaff2;frozen_bar_gaff2", flush=True
 )
 
 
@@ -31,6 +31,7 @@ molecules = cur.execute(
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'RelaxedForwardGAFF' AND status = 'Received') \
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'RelaxedReversedGAFF' AND status = 'Received') \
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'RelaxedBarGAFF' AND status = 'Received') \
+    AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'RelaxedBarGAFF5' AND status = 'Received') \
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'VacuumCREST' AND status = 'Received') \
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'VacuumCENSO' AND status = 'Received') \
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'FrozenForwardCENSO3' AND status = 'Received') \
@@ -117,6 +118,23 @@ for compound_id, smiles, iupac, experimental, _, mobley, _, _, _, _, _, _ in mol
     except IndexError:
         continue
 
+    relaxed_5_path = cur.execute(
+        f"SELECT local_path FROM runs WHERE {compound_id = } AND run_type = 'RelaxedBarGAFF5' LIMIT 1"
+    ).fetchone()[0]
+
+    try:
+        relaxed_bar_gaff_5 = float(
+            subprocess.run(
+                ["tail", "-n1", f"data/{relaxed_5_path}/ParseFEP.log"],
+                check=True,
+                capture_output=True,
+            )
+            .stdout.decode("utf-8")
+            .split()[6]
+        )
+    except IndexError:
+        continue
+
     frozen_forward_path = cur.execute(
         f"SELECT local_path FROM runs WHERE {compound_id = } AND run_type = 'FrozenForwardCENSO3' LIMIT 1"
     ).fetchone()[0]
@@ -169,6 +187,7 @@ for compound_id, smiles, iupac, experimental, _, mobley, _, _, _, _, _, _ in mol
                 relaxed_reversed_gaff,
                 relaxed_hysteresis_gaff,
                 relaxed_bar_gaff,
+                relaxed_bar_gaff_5,
                 frozen_forward_censo,
                 frozen_reversed_censo,
                 frozen_hysteresis_censo,
