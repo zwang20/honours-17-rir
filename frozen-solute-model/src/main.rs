@@ -385,7 +385,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }*/
 
     // setonix
-    /*{
+    {
         println!("Updating setonix");
         let setonix_raw_json = std::fs::File::create("server/setonix_raw.json")?;
         let output = std::process::Command::new("ssh")
@@ -413,7 +413,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(|i| i.name.parse::<u32>().unwrap())
                 .collect::<Vec<u32>>(),
         );
-    }*/
+    }
 
     jobs.sort_unstable(); // they are supposed to be unique anyway
     println!("Jobs: {:?}", jobs);
@@ -560,7 +560,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         println!("pick remote host {:?}", output);
                         katana2_cpu_queue_length += 1;
                     }
-                    /* else if (setonix_queue_length < 1)
+                    else if (setonix_queue_length < 1)
                         && ((run.run_type == RunType::VacuumCENSO)
                         || (run.run_type == RunType::FrozenForwardCENSO3)
                         || (run.run_type == RunType::FrozenReversedCENSO3))
@@ -574,7 +574,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )?;
                         setonix_queue_length += 1;
                         println!("pick remote host setonix");
-                    } */
+                    }
                     else {
                         println!("all queues busy, skipping");
                     }
@@ -863,7 +863,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        for _ in 1..10 {
+        /*for _ in 1..10 {
             // ORCA
             let mut statement = connection.prepare(
                 "\
@@ -923,7 +923,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Err(_) => {}
             }
-        }
+        }*/
         /*{
             // CREST
             let mut statement = connection.prepare(
@@ -954,7 +954,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }*/
 
-        /*{
+        {
             let mut statement = connection.prepare(
                 "\
                     SELECT * FROM molecules \
@@ -982,7 +982,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Err(_) => {}
             }
-        }*/
+        }
         {
             let mut statement = connection.prepare(
                 "\
