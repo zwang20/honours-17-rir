@@ -24,7 +24,13 @@ assert functional in ("M062X", "r2SCAN-3c")
 #         if element in ("I",):
 #             basis = "DEF2-SVP"
 
-basis = "DEF2-TZVP"
+if functional == "M062X":
+    basis = "DEF2-TZVP"
+elif functional == "r2SCAN-3c":
+    # hack
+    basis = "tightSCF"
+else:
+    raise NotImplemented
 
 with open(f"data/{local_path}/censo.inp", "w") as f:
     f.write(orca_inp_template.format(functional=functional, basis=basis, input="censo.xyz"))
