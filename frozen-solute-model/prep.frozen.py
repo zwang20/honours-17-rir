@@ -15,6 +15,9 @@ from common import min_run, equil_run
 from common import katana_min_equil, gadi_min_equil
 from common import constraint_frozen
 
+raise DeprecationWarning("Deprecated file")
+exit(1)
+
 assert len(sys.argv) == 4, (sys.argv, len(sys.argv))
 compound_id = sys.argv[1]
 assert compound_id.startswith("mobley_"), compound_id
