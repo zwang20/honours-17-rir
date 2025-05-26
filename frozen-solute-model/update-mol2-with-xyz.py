@@ -5,10 +5,11 @@ import sys
 
 import rdkit.Chem.rdmolfiles
 
-assert len(sys.argv) == 4, (sys.argv, len(sys.argv))
+assert len(sys.argv) == 5, (sys.argv, len(sys.argv))
 assert sys.argv[1].endswith("mol2"), sys.argv[1]
 assert sys.argv[2].endswith("xyz"), sys.argv[2]
 assert sys.argv[3].endswith("mol2"), sys.argv[3]
+assert sys.argv[4].startswith("CONF"), sys.argv[4]
 
 print("WARNING: DISTANCE UNCHECKED")
 
@@ -21,7 +22,10 @@ with (
         output_file.write(line)
     output_file.write(line)
     num_atoms = int(input_xyz.readline().strip())
-    input_xyz.readline()
+    conf = input_xyz.readline().strip()
+    while conf != sys.argv[4]:
+        conf = input_xyz.readline().strip()
+    assert conf == sys.argv[4]
     counter = 0
     while not (line := input_mol2.readline()).startswith("@<TRIPOS>BOND"):
         xyz_type, new_x_str, new_y_str, new_z_str = input_xyz.readline().split()
