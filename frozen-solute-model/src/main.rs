@@ -91,23 +91,33 @@ enum RunType {
     RelaxedBarGAFF5,
     FrozenMinEquilCENSO,
     FrozenMinEquilCENSO3,
+    FrozenMinEquilCENSO3E,
     FrozenForwardCENSO,
     FrozenForwardCENSO3,
-    FrozenForwardCENSO50,
-    FrozenForwardCENSO51,
+    FrozenForwardCENSO3E,
+    // FrozenForwardCENSO50,
+    FrozenForwardCENSO50E,
+    // FrozenForwardCENSO51,
+    FrozenForwardCENSO51E,
     FrozenReversedCENSO,
     FrozenReversedCENSO3,
-    FrozenReversedCENSO50,
-    FrozenReversedCENSO51,
+    FrozenReversedCENSO3E,
+    // FrozenReversedCENSO50,
+    FrozenReversedCENSO50E,
+    // FrozenReversedCENSO51,
+    FrozenReversedCENSO51E,
     FrozenBarCENSO,
     FrozenBarCENSO3,
-    FrozenBarCENSO5,
+    FrozenBarCENSO3E,
+    // FrozenBarCENSO5,
+    FrozenBarCENSO5E,
     CREST,
     CENSO,
     VacuumCREST,
     VacuumCENSO,
     ORCA,
     ORCAr2SCAN3c,
+    ORCAr2SCAN3cE,
 }
 
 impl RunType {
@@ -408,10 +418,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &mut serde_json::from_str::<Vec<SetonixJob>>(&std::fs::read_to_string(
                 "server/setonix.json",
             )?)
-                .unwrap_or_default()
-                .into_iter()
-                .map(|i| i.name.parse::<u32>().unwrap())
-                .collect::<Vec<u32>>(),
+            .unwrap_or_default()
+            .into_iter()
+            .map(|i| i.name.parse::<u32>().unwrap())
+            .collect::<Vec<u32>>(),
         );
     }
 
@@ -491,15 +501,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 if run.remote_host == RemoteHostType::localhost {
                     if ((katana_cpu_queue_length < 5)
-                        && ((run.run_type == RunType::FrozenForwardCENSO3)
-                            || (run.run_type == RunType::FrozenReversedCENSO3)
-                            || (run.run_type == RunType::RelaxedMinEquilGAFF)))
+                        && ((run.run_type == RunType::FrozenForwardCENSO3E)
+                            || (run.run_type == RunType::FrozenReversedCENSO3E)
+                            || (run.run_type == RunType::RelaxedMinEquilGAFF)
+                            || (run.run_type == RunType::CENSO)))
                         || ((katana_cpu_queue_length < 10)
                             && ((run.run_type == RunType::CREST)
                                 || (run.run_type == RunType::VacuumCREST)
-                                || (run.run_type == RunType::ORCA)
-                                || (run.run_type == RunType::ORCAr2SCAN3c)
-                                || (run.run_type == RunType::FrozenMinEquilCENSO3)))
+                                || (run.run_type == RunType::ORCAr2SCAN3cE)
+                                || (run.run_type == RunType::FrozenMinEquilCENSO3E)))
                     {
                         let output = connection.execute(
                             &format!(
@@ -543,12 +553,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         println!("pick remote host {:?}", query);
                         katana2_gpu_queue_length += 1;
                     } else if ((katana2_cpu_queue_length < 5)
-                        && ((run.run_type == RunType::FrozenForwardCENSO3)
-                            || (run.run_type == RunType::FrozenReversedCENSO3)
+                        && ((run.run_type == RunType::FrozenForwardCENSO3E)
+                            || (run.run_type == RunType::FrozenReversedCENSO3E)
                             || (run.run_type == RunType::RelaxedMinEquilGAFF)))
                         || ((katana2_cpu_queue_length < 10)
                             && ((run.run_type == RunType::VacuumCREST)
-                                || (run.run_type == RunType::FrozenMinEquilCENSO3)))
+                                || (run.run_type == RunType::FrozenMinEquilCENSO3E)))
                     {
                         let output = connection.execute(
                             &format!(
@@ -559,11 +569,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         );
                         println!("pick remote host {:?}", output);
                         katana2_cpu_queue_length += 1;
-                    }
-                    else if (setonix_queue_length < 1)
+                    } else if (setonix_queue_length < 1)
                         && ((run.run_type == RunType::VacuumCENSO)
-                        || (run.run_type == RunType::FrozenForwardCENSO3)
-                        || (run.run_type == RunType::FrozenReversedCENSO3))
+                            || (run.run_type == RunType::FrozenForwardCENSO3E)
+                            || (run.run_type == RunType::FrozenReversedCENSO3E))
                     {
                         connection.execute(
                             &format!(
@@ -574,8 +583,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )?;
                         setonix_queue_length += 1;
                         println!("pick remote host setonix");
-                    }
-                    else {
+                    } else {
                         println!("all queues busy, skipping");
                     }
                     break 'match_status;
@@ -687,12 +695,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             &format!("{:?}", run.remote_host),
                         ])?;
                     }
-                    RunType::FrozenForwardCENSO3
+                    RunType::FrozenForwardCENSO3E | RunType::FrozenReversedCENSO3E => {
+                        let mut statement = connection.prepare(&format!(
+                            "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'FrozenMinEquilCENSO3E'",
+                            run.compound_id,
+                        ))?;
+                        let min_equil_path = serde_rusqlite::from_rows::<Run>(statement.query([])?)
+                            .next()
+                            .ok_or("No prep found")??
+                            .local_path;
+
+                        for suffix in [".prmtop", ".pdb", "_equil.coor", "_equil.vel", "_equil.xsc"]
+                        {
+                            let source =
+                                format!("data/{}/{}{}", min_equil_path, run.compound_id, suffix);
+                            let dest =
+                                format!("data/{}/{}{}", run.local_path, run.compound_id, suffix);
+                            copy(&source, &dest)?;
+                        }
+
+                        copy("fep.tcl", &format!("data/{}/fep.tcl", run.local_path))?;
+
+                        // run prod script
+                        run_program(vec![
+                            "python",
+                            "prod.frozen.py",
+                            &run.compound_id,
+                            &run.local_path.to_string(),
+                            &format!("{:?}", run.remote_host),
+                            &format!("{:?}", run.run_type),
+                        ])?;
+                    }
+                    /*RunType::FrozenForwardCENSO3
                     | RunType::FrozenReversedCENSO3
                     | RunType::FrozenForwardCENSO50
                     | RunType::FrozenForwardCENSO51
                     | RunType::FrozenReversedCENSO50
                     | RunType::FrozenReversedCENSO51 => {
+                        panic!("Depricated!");
                         let mut statement = connection.prepare(&format!(
                             "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'FrozenMinEquilCENSO3'",
                             run.compound_id,
@@ -722,8 +762,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             &format!("{:?}", run.remote_host),
                             &format!("{:?}", run.run_type),
                         ])?;
-                    }
-                    RunType::ORCA | RunType::ORCAr2SCAN3c => {
+                    }*/
+                    /*RunType::ORCA | RunType::ORCAr2SCAN3c => {
                         let mut statement = connection.prepare(&format!(
                             "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'CENSO'",
                             run.compound_id,
@@ -776,16 +816,75 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 run_type => todo!("{:?}", run_type),
                             },
                         ])?;
-                    }
-                    RunType::FrozenMinEquilCENSO3 => {
+                    }*/
+                    RunType::ORCAr2SCAN3cE => {
+                        let mut statement = connection.prepare(&format!(
+                            "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'CENSO'",
+                            run.compound_id,
+                        ))?;
+                        let censo_path = serde_rusqlite::from_rows::<Run>(statement.query([])?)
+                            .next()
+                            .ok_or("No censo found")??
+                            .local_path;
+                        copy(
+                            &format!("data/{}/2_OPTIMIZATION.xyz", censo_path),
+                            &format!("2_OPTIMIZATION.xyz"),
+                        )?;
+                        copy(
+                            &format!("data/{}/2_OPTIMIZATION.out", censo_path),
+                            &format!("2_OPTIMIZATION.out"),
+                        )?;
+                        run_program(vec!["python", "get-step-2a-xyz.py"])?;
+                        copy(
+                            &format!("2_OPTIMIZATION.xyz"),
+                            &format!("data/{}/censo.xyz", run.local_path),
+                        )?;
+
+                        let mut statement = connection.prepare(&format!(
+                            "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'VacuumCENSO'",
+                            run.compound_id,
+                        ))?;
+                        let vacuum_censo_path =
+                            serde_rusqlite::from_rows::<Run>(statement.query([])?)
+                                .next()
+                                .ok_or("No vacuum censo found")??
+                                .local_path;
+
+                        copy(
+                            &format!("data/{}/2_OPTIMIZATION.xyz", vacuum_censo_path),
+                            &format!("2_OPTIMIZATION.xyz"),
+                        )?;
+                        copy(
+                            &format!("data/{}/2_OPTIMIZATION.out", vacuum_censo_path),
+                            &format!("2_OPTIMIZATION.out"),
+                        )?;
+                        run_program(vec!["python", "get-step-2a-xyz.py"])?;
+                        copy(
+                            &format!("2_OPTIMIZATION.xyz"),
+                            &format!("data/{}/vacuum_censo.xyz", run.local_path),
+                        )?;
+
                         run_program(vec![
                             "python",
-                            "prep.frozen.py",
+                            "orca.py",
+                            &format!("{}", run.local_path),
+                            &format!("{:?}", run.remote_host),
+                            "r2SCAN-3c",
+                        ])?;
+                    }
+                    RunType::FrozenMinEquilCENSO3E => {
+                        run_program(vec![
+                            "python",
+                            "prep.frozen3e.py",
                             &run.compound_id,
                             &format!("{}", run.local_path),
                             &format!("{:?}", run.remote_host),
                         ])?;
                     }
+                    RunType::FrozenMinEquilCENSO3 => {
+                        panic!("Depricated run type {:?}", run.run_type)
+                    }
+
                     _ => todo!("{:?}", run.run_type),
                 }
 
@@ -835,13 +934,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Generating Jobs");
 
+    {
+        let mut statement = connection.prepare(
+            " \
+            SELECT * FROM molecules \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenMinEquilCENSO3E') \
+            AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
+            ORDER BY rotatable_bonds ASC LIMIT 1 \
+            ",
+        )?;
+        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+            {
+                let query = format!(
+                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                                    molecule?.compound_id,
+                                    RunType::FrozenMinEquilCENSO3E,
+                                    StatusType::Planned,
+                                    RemoteHostType::localhost,
+                                    "/dev/null/"
+                );
+                println!("{}", query);
+                connection.execute(&query, [])?;
+            }
+    }
+
+    todo!();
+    todo!();
+
     if planned_cpu < 5 {
         // frozen prep
         {
             let mut statement = connection.prepare(
                 " \
                 SELECT * FROM molecules \
-                WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenMinEquilCENSO3') \
+                WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cE') \
+                AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
                 AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
                 ORDER BY rotatable_bonds ASC LIMIT 1 \
                 ",
@@ -853,7 +982,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let query = format!(
                     "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
                     molecule?.compound_id,
-                    RunType::FrozenMinEquilCENSO3,
+                    RunType::ORCAr2SCAN3cE,
                     StatusType::Planned,
                     RemoteHostType::localhost,
                     "/dev/null/"
@@ -863,7 +992,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        /*for _ in 1..10 {
+        for _ in 1..10 {
             // ORCA
             let mut statement = connection.prepare(
                 "\
@@ -923,7 +1052,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Err(_) => {}
             }
-        }*/
+        }
         /*{
             // CREST
             let mut statement = connection.prepare(
@@ -953,8 +1082,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Err(_) => {}
             }
         }*/
+        /*{
+            // CENSO
+            let mut statement = connection.prepare(
+                "\
+                SELECT * FROM molecules \
+                WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO') \
+                AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CREST' AND status == 'Received') \
+                ORDER BY rotatable_bonds DESC, num_atoms DESC LIMIT 1\
+                ",
+            )?;
 
-        {
+            match serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+            {
+                Ok(molecule) => {
+                    let query = format!(
+                        "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                                        molecule?.compound_id,
+                                        RunType::CENSO,
+                                        StatusType::Planned,
+                                        RemoteHostType::localhost,
+                                        "/dev/null/"
+                    );
+                    println!("{}", query);
+                    connection.execute(&query, [])?;
+                }
+                Err(_) => {}
+            }
+        }*/
+
+        /*{
             let mut statement = connection.prepare(
                 "\
                     SELECT * FROM molecules \
@@ -982,8 +1141,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Err(_) => {}
             }
-        }
-        {
+        }*/
+        /*{
             let mut statement = connection.prepare(
                 "\
                     SELECT * FROM molecules \
@@ -1011,8 +1170,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Err(_) => {}
             }
-        }
-        for _ in 0..2 {
+        }*/
+        /*for _ in 0..2 {
             let mut statement = connection.prepare(
                 "\
                     SELECT * FROM molecules \
@@ -1041,9 +1200,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Err(_) => {}
             }
-        }
+        }*/
     }
-    for _ in 0..2 {
+    /* for _ in 0..2 {
         // VacuumCREST
         let mut statement = connection.prepare(
             "\
@@ -1071,12 +1230,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             Err(_) => {}
         }
-    }
+    }*/
     if planned_gpu >= 5 {
         return Ok(());
     }
 
-    for _ in 0..2 {
+    /*for _ in 0..2 {
         let mut statement = connection.prepare("\
         SELECT * FROM molecules \
         WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedReversedGAFF') \
@@ -1103,9 +1262,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             Err(_) => {}
         }
-    }
+    }*/
 
-    {
+    /*{
         let mut statement = connection.prepare("\
             SELECT * FROM molecules \
             WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedForwardGAFF') \
@@ -1130,9 +1289,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             Err(_) => {}
         }
-    }
+    }*/
 
-    {
+    /*{
         let mut statement = connection.prepare(
             " \
             SELECT * FROM molecules \
@@ -1155,8 +1314,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("{}", query);
             connection.execute(&query, [])?;
         }
-    }
-    {
+    }*/
+    /*{
         let mut statement = connection.prepare(
             " \
             SELECT * FROM molecules \
@@ -1179,8 +1338,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("{}", query);
             connection.execute(&query, [])?;
         }
-    }
-    {
+    }*/
+    /*{
         let mut statement = connection.prepare(
         " \
             SELECT * FROM molecules \
@@ -1203,8 +1362,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("{}", query);
             connection.execute(&query, [])?;
         }
-    }
-    {
+    }*/
+    /*{
         let mut statement = connection.prepare(
             " \
             SELECT * FROM molecules \
@@ -1227,7 +1386,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("{}", query);
             connection.execute(&query, [])?;
         }
-    }
+    }*/
 
     Ok(())
 }
