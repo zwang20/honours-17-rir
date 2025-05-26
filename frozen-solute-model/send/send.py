@@ -257,6 +257,19 @@ mobley_9114381
 
 done = []
 
+
+compound_ids = """
+mobley_1743409
+mobley_1849020
+mobley_3318135
+mobley_6198745
+mobley_6338073
+mobley_6522117
+mobley_8916409
+mobley_9281946
+mobley_9741965
+""".split()
+
 import os
 import sqlite3
 import subprocess
@@ -293,10 +306,10 @@ for compound_id in compound_ids:
     num_atoms = int(subprocess.run(["head", "-n", "1", f"{compound_id}-censo.xyz"], capture_output=True, check=True).stdout.decode('UTF-8').strip())
 
     # split file
-    subprocess.run(["split", "-a", '5', '--additional-suffix=.xyz', '-d', '-l', str(num_atoms + 2), f"{compound_id}-censo.xyz", f"{compound_id}."])
+    subprocess.run(["split", "-a", '5', '--additional-suffix=.xyz', '-d', '-l', str(num_atoms + 2), f"{compound_id}-censo.xyz", f"{compound_id}."], check=True)
 
     # clear last
-    subprocess.run(["rm", f"{compound_id}-sorted.xyz"])
+    subprocess.run(["rm", f"{compound_id}-sorted.xyz"], check=False)
 
     # open file
     with open(f"../data/{local_path}/2_OPTIMIZATION.out") as f:
@@ -310,11 +323,12 @@ for compound_id in compound_ids:
             if not line:
                 break
 
-            if float(line[2]) <= 2:
-                conformers[line[0]] = line[2]
+            # if float(line[2]) <= 2:
+            #     conformers[line[0]] = float(line[1])
+            if 2 < float(line[2]) <= 4:
+                conformers[line[0]] = float(line[1])
 
-            # add energies
-            subprocess.run([f"sed -i 's/^{line[0]}$/{line[0]} {line[1]}/g' {compound_id}.*.xyz"], check=True, shell=True)
+
 
 
 
@@ -323,5 +337,15 @@ for compound_id in compound_ids:
     # sort
     for conformer in sorted(conformers, key=conformers.get):
 
-        # combine files?
-        subprocess.run([f"grep -lZ {conformer} {compound_id}.*.xyz | xargs -0 cat >> {compound_id}-sorted.xyz"], shell=True)
+        # combine files
+        subprocess.run([f"grep -lZE ^{conformer}$ {compound_id}.*.xyz | xargs -0 cat >> {compound_id}-sorted.xyz"], shell=True, check=True)
+
+        # double check
+        assert int(subprocess.run([f"grep -E ^{conformer}$ {compound_id}-sorted.xyz | wc -l"], shell=True, check=True, capture_output=True).stdout.decode('utf-8')) == 1
+
+        # add energies
+        subprocess.run([f"sed -i 's/^{conformer}$/{conformer} {conformers[conformer]}/g' {compound_id}-sorted.xyz"], check=True, shell=True)
+
+        # triple check
+        assert int(subprocess.run([f"grep -E ^{conformer}$ {compound_id}-sorted.xyz | wc -l"], shell=True, check=True, capture_output=True).stdout.decode('utf-8')) == 0
+        assert int(subprocess.run([f"grep -E '^{conformer} ' {compound_id}-sorted.xyz | wc -l"], shell=True, check=True, capture_output=True).stdout.decode('utf-8')) == 1
