@@ -34,9 +34,9 @@ run_type = sys.argv[4]
 
 
 match run_type:
-    case "FrozenForwardCENSO3":
+    case "FrozenForwardCENSO3" | "FrozenForwardCENSO3E":
         mode="ff"; start=0; end=1; step=0.05; steps = 1500000
-    case "FrozenReversedCENSO3":
+    case "FrozenReversedCENSO3" | "FrozenReversedCENSO3E":
         mode="fr"; start=1; end=0; step=-0.05; steps = 1500000
     case "FrozenForwardCENSO50":
         mode="ff"; start=0; end=0.5; step=0.05; steps = 2500000
