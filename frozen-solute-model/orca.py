@@ -14,7 +14,7 @@ local_path = int(sys.argv[1])
 hostname = sys.argv[2]
 functional = sys.argv[3]
 
-assert hostname in ("katana",)
+assert hostname in ("katana", "katana2")
 assert functional in ("M062X", "r2SCAN-3c")
 
 # basis = "6-31G(d)"
@@ -38,7 +38,7 @@ with open(f"data/{local_path}/censo.inp", "w") as f:
 with open(f"data/{local_path}/vacuum_censo.inp", "w") as f:
     f.write(orca_inp_template.format(functional=functional, basis=basis, input="vacuum_censo.xyz"))
 
-if hostname in ("katana"):
+if hostname in ("katana", "katana2"):
     with open(f"data/{local_path}/{local_path}", "w") as f:
         f.write(katana_orca_template.format())
 else:
