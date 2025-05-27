@@ -118,6 +118,7 @@ enum RunType {
     ORCA,
     ORCAr2SCAN3c,
     ORCAr2SCAN3cE,
+    ORCAr2SCAN3cEOpt,
 }
 
 impl RunType {
@@ -509,6 +510,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             && ((run.run_type == RunType::CREST)
                                 || (run.run_type == RunType::VacuumCREST)
                                 || (run.run_type == RunType::ORCAr2SCAN3cE)
+                                || (run.run_type == RunType::FrozenMinEquilCENSO3E)
                                 || (run.run_type == RunType::FrozenMinEquilCENSO3E)))
                     {
                         let output = connection.execute(
@@ -558,6 +560,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             || (run.run_type == RunType::RelaxedMinEquilGAFF)))
                         || ((katana2_cpu_queue_length < 10)
                             && ((run.run_type == RunType::VacuumCREST)
+                                || (run.run_type == RunType::ORCAr2SCAN3cE)
                                 || (run.run_type == RunType::FrozenMinEquilCENSO3E)))
                     {
                         let output = connection.execute(
@@ -938,8 +941,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut statement = connection.prepare(
             " \
             SELECT * FROM molecules \
-            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenMinEquilCENSO3E') \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOpt') \
             AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
+            AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'VacuumCENSO' AND status == 'Received') \
             ORDER BY rotatable_bonds ASC LIMIT 1 \
             ",
         )?;
@@ -950,7 +954,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let query = format!(
                     "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
                                     molecule?.compound_id,
-                                    RunType::FrozenMinEquilCENSO3E,
+                                    RunType::ORCAr2SCAN3cEOpt,
                                     StatusType::Planned,
                                     RemoteHostType::localhost,
                                     "/dev/null/"
@@ -960,7 +964,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
     }
 
-    todo!();
+    return Ok(());
     todo!();
 
     if planned_cpu < 5 {
@@ -969,8 +973,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut statement = connection.prepare(
                 " \
                 SELECT * FROM molecules \
-                WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cE') \
-                AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
+                WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenMinEquilCENSO3E') \
                 AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
                 ORDER BY rotatable_bonds ASC LIMIT 1 \
                 ",
@@ -982,7 +985,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let query = format!(
                     "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
                     molecule?.compound_id,
-                    RunType::ORCAr2SCAN3cE,
+                    RunType::FrozenMinEquilCENSO3E,
                     StatusType::Planned,
                     RemoteHostType::localhost,
                     "/dev/null/"
