@@ -119,6 +119,7 @@ enum RunType {
     ORCAr2SCAN3c,
     ORCAr2SCAN3cE,
     ORCAr2SCAN3cEOpt,
+    ORCAr2SCAN3cEOptVac,
 }
 
 impl RunType {
@@ -511,7 +512,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 || (run.run_type == RunType::VacuumCREST)
                                 || (run.run_type == RunType::ORCAr2SCAN3cE)
                                 || (run.run_type == RunType::FrozenMinEquilCENSO3E)
-                                || (run.run_type == RunType::FrozenMinEquilCENSO3E)))
+                                || (run.run_type == RunType::ORCAr2SCAN3cEOpt)
+                                || (run.run_type == RunType::ORCAr2SCAN3cEOptVac)))
                     {
                         let output = connection.execute(
                             &format!(
@@ -875,6 +877,72 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             "r2SCAN-3c",
                         ])?;
                     }
+                    RunType::ORCAr2SCAN3cEOpt => {
+                        let mut statement = connection.prepare(&format!(
+                            "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'CENSO'",
+                            run.compound_id,
+                        ))?;
+                        let censo_path = serde_rusqlite::from_rows::<Run>(statement.query([])?)
+                        .next()
+                        .ok_or("No censo found")??
+                        .local_path;
+                        copy(
+                            &format!("data/{}/2_OPTIMIZATION.xyz", censo_path),
+                             &format!("2_OPTIMIZATION.xyz"),
+                        )?;
+                        copy(
+                            &format!("data/{}/2_OPTIMIZATION.out", censo_path),
+                             &format!("2_OPTIMIZATION.out"),
+                        )?;
+                        run_program(vec!["python", "get-step-2a-xyz.py"])?;
+                        copy(
+                            &format!("2_OPTIMIZATION.xyz"),
+                             &format!("data/{}/censo.xyz", run.local_path),
+                        )?;
+
+                        run_program(vec![
+                            "python",
+                            "orca2.py",
+                            &format!("{}", run.local_path),
+                            &format!("{:?}", run.remote_host),
+                            "r2SCAN-3c-opt",
+                            "censo.xyz"
+                        ])?;
+                    }
+                    RunType::ORCAr2SCAN3cEOptVac => {
+                        let mut statement = connection.prepare(&format!(
+                            "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'VacuumCENSO'",
+                            run.compound_id,
+                        ))?;
+                        let vacuum_censo_path =
+                        serde_rusqlite::from_rows::<Run>(statement.query([])?)
+                        .next()
+                        .ok_or("No vacuum censo found")??
+                        .local_path;
+
+                        copy(
+                            &format!("data/{}/2_OPTIMIZATION.xyz", vacuum_censo_path),
+                             &format!("2_OPTIMIZATION.xyz"),
+                        )?;
+                        copy(
+                            &format!("data/{}/2_OPTIMIZATION.out", vacuum_censo_path),
+                             &format!("2_OPTIMIZATION.out"),
+                        )?;
+                        run_program(vec!["python", "get-step-2a-xyz.py"])?;
+                        copy(
+                            &format!("2_OPTIMIZATION.xyz"),
+                             &format!("data/{}/vacuum_censo.xyz", run.local_path),
+                        )?;
+
+                        run_program(vec![
+                            "python",
+                            "orca2.py",
+                            &format!("{}", run.local_path),
+                            &format!("{:?}", run.remote_host),
+                            "r2SCAN-3c-opt",
+                            "vacuum_censo.xyz"
+                        ])?;
+                    }
                     RunType::FrozenMinEquilCENSO3E => {
                         run_program(vec![
                             "python",
@@ -943,7 +1011,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             SELECT * FROM molecules \
             WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOpt') \
             AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
-            AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'VacuumCENSO' AND status == 'Received') \
             ORDER BY rotatable_bonds ASC LIMIT 1 \
             ",
         )?;
@@ -955,6 +1022,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
                                     molecule?.compound_id,
                                     RunType::ORCAr2SCAN3cEOpt,
+                                    StatusType::Planned,
+                                    RemoteHostType::localhost,
+                                    "/dev/null/"
+                );
+                println!("{}", query);
+                connection.execute(&query, [])?;
+            }
+    }
+    {
+        let mut statement = connection.prepare(
+            " \
+            SELECT * FROM molecules \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOptVac') \
+            AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'VacuumCENSO' AND status == 'Received') \
+            ORDER BY rotatable_bonds ASC LIMIT 1 \
+            ",
+        )?;
+        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+            {
+                let query = format!(
+                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                                    molecule?.compound_id,
+                                    RunType::ORCAr2SCAN3cEOptVac,
                                     StatusType::Planned,
                                     RemoteHostType::localhost,
                                     "/dev/null/"
