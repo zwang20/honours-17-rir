@@ -25,7 +25,7 @@ assert functional in ("M062X", "r2SCAN-3c")
 #             basis = "DEF2-SVP"
 
 if functional == "M062X":
-    basis = "DEF2-TZVP"
+    basis = "DEF2-TZVP"  # 6-31G*
 elif functional == "r2SCAN-3c":
     # hack
     basis = "tightSCF"
