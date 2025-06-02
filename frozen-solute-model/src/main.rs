@@ -397,7 +397,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }*/
 
     // setonix
-    {
+    /*{
         println!("Updating setonix");
         let setonix_raw_json = std::fs::File::create("server/setonix_raw.json")?;
         let output = std::process::Command::new("ssh")
@@ -425,7 +425,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map(|i| i.name.parse::<u32>().unwrap())
             .collect::<Vec<u32>>(),
         );
-    }
+    }*/
 
     jobs.sort_unstable(); // they are supposed to be unique anyway
     println!("Jobs: {:?}", jobs);
@@ -1054,6 +1054,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("{}", query);
                 connection.execute(&query, [])?;
             }
+    }
+    if planned_cpu < 5 {
+        // frozen prep
+        {
+            let mut statement = connection.prepare(
+                " \
+                SELECT * FROM molecules \
+                WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenMinEquilCENSO3E') \
+                AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
+                ORDER BY rotatable_bonds ASC LIMIT 1 \
+                ",
+            )?;
+            if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+                .next()
+                .ok_or(())
+                {
+                    let query = format!(
+                        "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                                        molecule?.compound_id,
+                                        RunType::FrozenMinEquilCENSO3E,
+                                        StatusType::Planned,
+                                        RemoteHostType::localhost,
+                                        "/dev/null/"
+                    );
+                    println!("{}", query);
+                    connection.execute(&query, [])?;
+                }
+        }
     }
 
     return Ok(());
