@@ -31,7 +31,6 @@ functional = sys.argv[3]
 input_xyz = sys.argv[4]
 
 assert hostname in ("katana", "katana2")
-assert functional in ("r2SCAN-3c-opt")
 assert input_xyz.endswith(".xyz")
 
 # basis = "6-31G(d)"
@@ -43,6 +42,9 @@ assert input_xyz.endswith(".xyz")
 
 if functional == "r2SCAN-3c-opt":
     basis = "TightSCF TightOpt Freq"
+    functional = "r2SCAN-3c"
+elif functional == "r2SCAN-3c-vtopt":
+    basis = "TightSCF VeryTightOpt Freq"
     functional = "r2SCAN-3c"
 else:
     raise NotImplemented
