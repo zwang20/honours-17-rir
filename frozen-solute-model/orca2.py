@@ -20,6 +20,15 @@ cd "$PBS_O_WORKDIR/$PBS_ARRAY_INDEX"
 orca orca.inp > orca.out
 """
 
+orca_inp_template_sym = """! {functional} {basis}
+%sym
+    SymThresh 1.0e-2
+    SymRelaxOpt True
+    CleanUpGradient True
+end
+* xyzfile 0 1 {input}
+"""
+
 # INSERT 1828
 
 # usage: orca.py <local_path> <remote_host> <functional> <input.xyz>
@@ -45,6 +54,10 @@ if functional == "r2SCAN-3c-opt":
     functional = "r2SCAN-3c"
 elif functional == "r2SCAN-3c-vtopt":
     basis = "TightSCF VeryTightOpt Freq"
+    functional = "r2SCAN-3c"
+elif functional == "r2SCAN-3c-opt-sym":
+    orca_inp_template = orca_inp_template_sym
+    basis = "TightSCF TightOpt Freq"
     functional = "r2SCAN-3c"
 else:
     raise NotImplemented
