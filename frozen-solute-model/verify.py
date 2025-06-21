@@ -5,6 +5,7 @@
 import os
 import sqlite3
 import subprocess
+import sys
 
 con = sqlite3.connect("frozen_solute_model_new.db")
 cur = con.cursor()
@@ -98,9 +99,15 @@ def main():
             return frozen_path
 
 
-local_path = main()
-if not local_path:
-    exit()
+if len(sys.argv) == 1:
+    local_path = main()
+    if not local_path:
+        exit(1)
+elif len(sys.argv) == 2:
+    local_path = int(sys.argv[1])
+else:
+    print(f"Unknonw argv {sys.argv}")
+    exit(1)
 print(f"{local_path = }")
 
 compound_id, run_type = cur.execute(
