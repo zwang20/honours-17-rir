@@ -586,10 +586,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         println!("pick remote host {:?}", output);
                         katana2_cpu_queue_length += 1;
                     } */
-                    else if ((setonix_queue_length < 1) && (setonix_job_count < 10))
-                        && ((run.run_type == RunType::CENSO)
-                            || (run.run_type == RunType::FrozenForwardCENSO3E)
-                            || (run.run_type == RunType::FrozenReversedCENSO3E))
+                    else if ((setonix_queue_length < 20) && (setonix_job_count < 200))
+                        && ((run.run_type == RunType::CENSO))
                     {
                         connection.execute(
                             &format!(
