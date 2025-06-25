@@ -74,3 +74,8 @@ cur.execute(
 )
 con.commit()
 con.close()
+
+print(f"{compound_id = }")
+print(f"{local_path = }")
+print(f"{forward_path = }")
+print(f"{reversed_path = }")
