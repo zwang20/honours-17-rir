@@ -19,7 +19,7 @@ res = cur.execute(
 row = res.fetchone()
 if row is None:
     print("No more frozen bars")
-    sys.exit()
+    sys.exit(1)
 
 compound_id = row[0]
 print(f"{compound_id = }")
