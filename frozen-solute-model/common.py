@@ -320,9 +320,9 @@ gadi_censo = """#!/usr/bin/bash
 set -e
 
 module add orca
-module add python
+module add python3
 
-
+/scratch/cw7/mw7780/censo/bin/censo -i crest_conformers.xyz --maxcores {ncpus} -O 1 > censo.out
 """
 
 setonix_censo = """#!/usr/bin/bash
