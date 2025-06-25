@@ -1,11 +1,11 @@
 
 source leaprc.gaff
 source leaprc.water.tip3p
-loadamberparams mobley_9015240.frcmod
-mol = loadMol2 mobley_9015240.mol2
+loadamberparams mobley_2636578.frcmod
+mol = loadMol2 mobley_2636578.mol2
 check mol
-solvatebox mol TIP3PBOX 11.875
+solvatebox mol TIP3PBOX 12.34375
 check mol
-savepdb mol mobley_9015240.pdb
-saveamberparm mol mobley_9015240.prmtop mobley_9015240.inpcrd
+savepdb mol mobley_2636578.pdb
+saveamberparm mol mobley_2636578.prmtop mobley_2636578.inpcrd
 quit
