@@ -120,6 +120,7 @@ enum RunType {
     ORCAr2SCAN3cE,
     ORCAr2SCAN3cEOpt,
     ORCAr2SCAN3cEOptSym,
+    ORCAr2SCAN3cEOptSym2,
     ORCAr2SCAN3cEVTOpt,
     ORCAr2SCAN3cEOptVac,
     ORCAr2SCAN3cEOptVacSym,
@@ -370,7 +371,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // gadi
-    /* {
+    {
         println!("Updating gadi");
         let gadi_raw_json = std::fs::File::create("server/gadi_raw.json")?;
         let output = std::process::Command::new("ssh")
@@ -393,15 +394,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &mut serde_json::from_str::<Vec<GadiJob>>(&std::fs::read_to_string(
                 "server/gadi.json",
             )?)
-                .unwrap_or_default()
-                .into_iter()
-                .map(|i| i.Job_Name.parse::<u32>().unwrap())
-                .collect::<Vec<u32>>(),
+            .unwrap_or_default()
+            .into_iter()
+            .map(|i| i.Job_Name.parse::<u32>().unwrap())
+            .collect::<Vec<u32>>(),
         );
-    }*/
+    }
 
     // setonix
-    {
+    /*{
         println!("Updating setonix");
         let setonix_raw_json = std::fs::File::create("server/setonix_raw.json")?;
         let output = std::process::Command::new("ssh")
@@ -429,7 +430,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map(|i| i.name.parse::<u32>().unwrap())
             .collect::<Vec<u32>>(),
         );
-    }
+    }*/
 
     let setonix_job_count =
         serde_json::from_str::<Vec<SetonixJob>>(&std::fs::read_to_string("server/setonix.json")?)
@@ -586,7 +587,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         println!("pick remote host {:?}", output);
                         katana2_cpu_queue_length += 1;
                     } */
-                    else if ((setonix_queue_length < 20) && (setonix_job_count < 200))
+                    /* else if ((setonix_queue_length < 20) && (setonix_job_count < 200))
                         && ((run.run_type == RunType::CENSO))
                     {
                         connection.execute(
@@ -598,6 +599,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )?;
                         setonix_queue_length += 1;
                         println!("pick remote host setonix");
+                    } */
+                    else if (gadi_queue_length < 5) && (run.run_type == RunType::CENSO) {
+                        connection.execute(
+                            &format!(
+                                "UPDATE runs SET remote_path = '/scratch/cw7/mw7780/.automated/{}/', remote_host = 'gadi' WHERE local_path = {}",
+                                run.local_path, run.local_path
+                            ),
+                            [],
+                        )?;
+                        gadi_queue_length += 1;
+                        println!("pick remote host gadi");
                     } else {
                         println!("all queues busy, skipping");
                     }
@@ -1195,6 +1207,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 connection.execute(&query, [])?;
             }
         }
+    }
+
+    if gadi_queue_length < 5 {
         {
             // CENSO
             let mut statement = connection.prepare(
