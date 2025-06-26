@@ -402,7 +402,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // setonix
-    /*{
+    {
         println!("Updating setonix");
         let setonix_raw_json = std::fs::File::create("server/setonix_raw.json")?;
         let output = std::process::Command::new("ssh")
@@ -430,7 +430,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map(|i| i.name.parse::<u32>().unwrap())
             .collect::<Vec<u32>>(),
         );
-    }*/
+    }
 
     let setonix_job_count =
         serde_json::from_str::<Vec<SetonixJob>>(&std::fs::read_to_string("server/setonix.json")?)
@@ -587,7 +587,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         println!("pick remote host {:?}", output);
                         katana2_cpu_queue_length += 1;
                     } */
-                    /* else if ((setonix_queue_length < 20) && (setonix_job_count < 200))
+                    else if ((setonix_queue_length < 20) && (setonix_job_count < 200))
                         && ((run.run_type == RunType::CENSO))
                     {
                         connection.execute(
@@ -599,8 +599,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )?;
                         setonix_queue_length += 1;
                         println!("pick remote host setonix");
-                    } */
-                    else if (gadi_queue_length < 5) && (run.run_type == RunType::CENSO) {
+                    }
+                    /* else if (gadi_queue_length < 5) && (run.run_type == RunType::CENSO) {
                         connection.execute(
                             &format!(
                                 "UPDATE runs SET remote_path = '/scratch/cw7/mw7780/.automated/{}/', remote_host = 'gadi' WHERE local_path = {}",
@@ -610,7 +610,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )?;
                         gadi_queue_length += 1;
                         println!("pick remote host gadi");
-                    } else {
+                    } */
+                    else {
                         println!("all queues busy, skipping");
                     }
                     break 'match_status;
