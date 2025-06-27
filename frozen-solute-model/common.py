@@ -330,7 +330,8 @@ setonix_censo = """#!/usr/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task={ncpus}
 #SBATCH --mem={mem}G
-#SBATCH --time=24:00:00
+#SBATCH --partition=long
+#SBATCH --time=96:00:00
 
 set -e
 
