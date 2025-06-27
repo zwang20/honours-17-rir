@@ -59,6 +59,10 @@ elif functional == "r2SCAN-3c-opt-sym":
     orca_inp_template = orca_inp_template_sym
     basis = "TightSCF TightOpt Freq"
     functional = "r2SCAN-3c"
+elif functional == "ORCAr2SCAN3cEOptVacSym2":
+    orca_inp_template = orca_inp_template_sym
+    basis = "VeryTightSCF TightOpt Freq"
+    functional = "r2SCAN-3c"
 else:
     raise NotImplemented
 
