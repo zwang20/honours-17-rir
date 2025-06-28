@@ -66,7 +66,8 @@ while True:
         if retry >= 10:
             print(f"Failing job {compound_id}")
             cur.execute(
-                f"INSERT INTO runs VALUES ('{compound_id}', 'FrozenMinEquilCENSO3', 'Failed', {local_path}, '{HOSTNAME}', '{REMOTE_PATH}');"
+                f"UPDATE runs SET status = 'Failed' WHERE local_path = '{local_path}'"
+                # f"INSERT INTO runs VALUES ('{compound_id}', 'FrozenMinEquilCENSO3', 'Failed', {local_path}, 'localhost', '/dev/');"
             )
             con.commit()
             con.close()
