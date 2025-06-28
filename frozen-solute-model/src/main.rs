@@ -63,7 +63,7 @@ impl RemoteHostType {
     fn get_data_host(&self) -> &str {
         match self {
             RemoteHostType::localhost => "localhost",
-            RemoteHostType::katana => "kdm",
+            RemoteHostType::katana => "katana",
             RemoteHostType::katana2 => "kdm2",
             RemoteHostType::gadi => "gadi-dm",
             RemoteHostType::setonix => "setonix-data",
