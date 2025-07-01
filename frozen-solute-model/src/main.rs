@@ -372,7 +372,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // gadi
-    {
+    /*{
         println!("Updating gadi");
         let gadi_raw_json = std::fs::File::create("server/gadi_raw.json")?;
         let output = std::process::Command::new("ssh")
@@ -400,7 +400,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map(|i| i.Job_Name.parse::<u32>().unwrap())
             .collect::<Vec<u32>>(),
         );
-    }
+    }*/
 
     // setonix
     {
