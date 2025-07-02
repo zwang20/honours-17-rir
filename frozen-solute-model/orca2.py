@@ -59,15 +59,24 @@ elif functional == "r2SCAN-3c-opt-sym":
     orca_inp_template = orca_inp_template_sym
     basis = "TightSCF TightOpt Freq"
     functional = "r2SCAN-3c"
+elif functional == "ORCAr2SCAN3cEOptSym":
+    orca_inp_template = orca_inp_template_sym
+    basis = "TightSCF TightOpt Freq"
+    functional = "r2SCAN-3c"
 elif functional == "ORCAr2SCAN3cEOptVacSym2":
     orca_inp_template = orca_inp_template_sym
     basis = "VeryTightSCF TightOpt Freq"
+    functional = "r2SCAN-3c"
+elif functional == "ORCAr2SCAN3cEOptSym11":
+    orca_inp_template = orca_inp_template_sym
+    basis = "TightSCF TightOpt Freq DefGrid3"
     functional = "r2SCAN-3c"
 elif functional == "ORCAr2SCAN3cEOptVacSym11":
     orca_inp_template = orca_inp_template_sym
     basis = "TightSCF TightOpt Freq DefGrid3"
     functional = "r2SCAN-3c"
 else:
+    print(functional)
     raise NotImplemented
 
 with open(f"data/{local_path}/orca.inp", "w") as f:
