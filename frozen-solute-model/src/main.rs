@@ -125,6 +125,7 @@ enum RunType {
     ORCAr2SCAN3cEOptVac,
     ORCAr2SCAN3cEOptVacSym,
     ORCAr2SCAN3cEOptVacSym2,
+    ORCAr2SCAN3cEOptVacSym11,
     ORCAr2SCAN3cEVTOptVac,
 }
 
@@ -527,6 +528,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptSym)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptVacSym)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptVacSym2)
+                                || (run.run_type == RunType::ORCAr2SCAN3cEOptVacSym11)
                             ))
                     {
                         let output = connection.execute(
@@ -990,7 +992,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             _ => todo!(),
                         }
                     }
-                    RunType::ORCAr2SCAN3cEOptSym | RunType::ORCAr2SCAN3cEOptVacSym | RunType::ORCAr2SCAN3cEOptVacSym2=> {
+                    RunType::ORCAr2SCAN3cEOptSym | RunType::ORCAr2SCAN3cEOptVacSym | RunType::ORCAr2SCAN3cEOptVacSym2 | RunType::ORCAr2SCAN3cEOptVacSym11 => {
                         let mut statement = match &run.run_type {
                             RunType::ORCAr2SCAN3cEOptSym => connection.prepare(&format!(
                                 "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOpt'",
@@ -1000,7 +1002,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOptVac'",
                                 run.compound_id,
                             ))?,
-                            RunType::ORCAr2SCAN3cEOptVacSym2 => connection.prepare(&format!(
+                            RunType::ORCAr2SCAN3cEOptVacSym2 | RunType::ORCAr2SCAN3cEOptVacSym11 => connection.prepare(&format!(
                                 "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOptVacSym'",
                                 run.compound_id,
                             ))?,
@@ -1139,7 +1141,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut statement = connection.prepare(
             " \
             SELECT * FROM molecules \
-            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOptVacSym2') \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOptVacSym11') \
             AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOptVacSym' AND status == 'Received') \
             ORDER BY rotatable_bonds ASC LIMIT 1 \
             ",
@@ -1151,7 +1153,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let query = format!(
                     "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
                                     molecule?.compound_id,
-                                    RunType::ORCAr2SCAN3cEOptVacSym2,
+                                    RunType::ORCAr2SCAN3cEOptVacSym11,
                                     StatusType::Planned,
                                     RemoteHostType::localhost,
                                     "/dev/null/"
