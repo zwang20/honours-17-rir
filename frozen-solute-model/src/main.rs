@@ -324,7 +324,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Updating katana");
         let katana_raw_json = std::fs::File::create("server/katana_raw.json")?;
         let output = std::process::Command::new("ssh")
-            .arg("katana2")
+            .arg("katana")
             .arg("qstat -f -F json")
             .stdout(katana_raw_json)
             .output();
