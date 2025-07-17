@@ -15,7 +15,7 @@ def main():
     # returns a path if invalid path is found, else None
 
     censo_paths = cur.execute(
-        "SELECT local_path FROM runs WHERE run_type = 'CENSO' AND status != 'Planned' AND status != 'Running'"
+        "SELECT local_path FROM runs WHERE run_type = 'CENSO' AND status != 'Planned' AND status != 'Running' AND status != 'Failed'"
     ).fetchall()
     for i in censo_paths:
         censo_path = i[0]
