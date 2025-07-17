@@ -275,6 +275,7 @@ fn run_program(args: Vec<&str>) -> Result<(), Box<dyn std::error::Error>> {
     println!("running program with args {:?}", args);
     let mut args = args.into_iter();
     let mut process = std::process::Command::new(args.next().ok_or("No command found")?);
+    process.env("QT_QPA_PLATFORM", "xcb");
     for arg in args {
         process.arg(arg);
     }
