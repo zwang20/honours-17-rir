@@ -122,11 +122,13 @@ enum RunType {
     ORCAr2SCAN3cEOptSym,
     ORCAr2SCAN3cEOptSym2,
     ORCAr2SCAN3cEOptSym11,
+    ORCAr2SCAN3cEOptSym12,
     ORCAr2SCAN3cEVTOpt,
     ORCAr2SCAN3cEOptVac,
     ORCAr2SCAN3cEOptVacSym,
     ORCAr2SCAN3cEOptVacSym2,
     ORCAr2SCAN3cEOptVacSym11,
+    ORCAr2SCAN3cEOptVacSym12,
     ORCAr2SCAN3cEVTOptVac,
 }
 
@@ -529,9 +531,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptVac)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptSym)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptSym11)
+                                || (run.run_type == RunType::ORCAr2SCAN3cEOptSym12)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptVacSym)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptVacSym2)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptVacSym11)
+                                || (run.run_type == RunType::ORCAr2SCAN3cEOptVacSym12)
                             ))
                     {
                         let output = connection.execute(
@@ -1334,9 +1338,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    return Ok(());
-    todo!();
-
     if planned_cpu < 5 {
         // frozen prep
         {
@@ -1365,67 +1366,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        for _ in 1..10 {
-            // ORCA
-            let mut statement = connection.prepare(
-                "\
-                SELECT * FROM molecules \
-                WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCA') \
-                AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
-                AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'VacuumCENSO' AND status == 'Received') \
-                AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenBarCENSO3' AND status == 'Received') \
-                ",
-            )?;
 
-            match serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-                .next()
-                .ok_or(())
-            {
-                Ok(molecule) => {
-                    let query = format!(
-                        "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                        molecule?.compound_id,
-                        RunType::ORCA,
-                        StatusType::Planned,
-                        RemoteHostType::localhost,
-                        "/dev/null/"
-                    );
-                    println!("{}", query);
-                    connection.execute(&query, [])?;
-                }
-                Err(_) => {}
-            }
-        }
-        for _ in 1..10 {
-            // ORCAr2SCAN3c
-            let mut statement = connection.prepare(
-                "\
-                    SELECT * FROM molecules \
-                    WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3c') \
-                    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
-                    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'VacuumCENSO' AND status == 'Received') \
-                ",
-            )?;
-
-            match serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-                .next()
-                .ok_or(())
-            {
-                Ok(molecule) => {
-                    let query = format!(
-                        "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                        molecule?.compound_id,
-                        RunType::ORCAr2SCAN3c,
-                        StatusType::Planned,
-                        RemoteHostType::localhost,
-                        "/dev/null/"
-                    );
-                    println!("{}", query);
-                    connection.execute(&query, [])?;
-                }
-                Err(_) => {}
-            }
-        }
         /*{
             // CREST
             let mut statement = connection.prepare(
