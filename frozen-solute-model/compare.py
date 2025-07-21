@@ -31,7 +31,6 @@ molecules = cur.execute(
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'RelaxedForwardGAFF' AND status = 'Received') \
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'RelaxedReversedGAFF' AND status = 'Received') \
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'RelaxedBarGAFF' AND status = 'Received') \
-    AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'RelaxedBarGAFF5' AND status = 'Received') \
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'VacuumCREST' AND status = 'Received') \
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'VacuumCENSO' AND status = 'Received') \
     AND compound_id in (SELECT compound_id FROM runs WHERE run_type = 'FrozenForwardCENSO3' AND status = 'Received') \
