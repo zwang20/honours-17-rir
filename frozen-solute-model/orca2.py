@@ -29,6 +29,15 @@ end
 * xyzfile 0 1 {input}
 """
 
+orca_inp_template_sym_2 = """! {functional} {basis}
+%sym
+    SymThresh 1.0e-1
+    SymRelaxOpt True
+    CleanUpGradient True
+end
+* xyzfile 0 1 {input}
+"""
+
 # INSERT 1828
 
 # usage: orca.py <local_path> <remote_host> <functional> <input.xyz>
@@ -75,9 +84,17 @@ elif functional == "ORCAr2SCAN3cEOptVacSym11":
     orca_inp_template = orca_inp_template_sym
     basis = "TightSCF TightOpt Freq DefGrid3"
     functional = "r2SCAN-3c"
+elif functional == "ORCAr2SCAN3cEOptSym12":
+    orca_inp_template = orca_inp_template_sym_2
+    basis = "TightSCF TightOpt Freq DefGrid3 CHELPG"
+    functional = "r2SCAN-3c"
+elif functional == "ORCAr2SCAN3cEOptVacSym12":
+    orca_inp_template = orca_inp_template_sym_2
+    basis = "TightSCF TightOpt Freq DefGrid3 CHELPG"
+    functional = "r2SCAN-3c"
 else:
     print(functional)
-    raise NotImplemented
+    raise NotImplementedError
 
 with open(f"data/{local_path}/orca.inp", "w") as f:
     f.write(orca_inp_template.format(functional=functional, basis=basis, input=input_xyz))
