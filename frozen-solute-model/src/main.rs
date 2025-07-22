@@ -999,7 +999,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             _ => todo!(),
                         }
                     }
-                    RunType::ORCAr2SCAN3cEOptSym | RunType::ORCAr2SCAN3cEOptVacSym | RunType::ORCAr2SCAN3cEOptVacSym2 | RunType::ORCAr2SCAN3cEOptVacSym11 | RunType::ORCAr2SCAN3cEOptSym11 => {
+                    RunType::ORCAr2SCAN3cEOptSym | RunType::ORCAr2SCAN3cEOptVacSym | RunType::ORCAr2SCAN3cEOptVacSym2 | RunType::ORCAr2SCAN3cEOptVacSym11 | RunType::ORCAr2SCAN3cEOptSym11 | RunType::ORCAr2SCAN3cEOptVacSym12 | RunType::ORCAr2SCAN3cEOptSym12 => {
                         let mut statement = match &run.run_type {
                             RunType::ORCAr2SCAN3cEOptSym => connection.prepare(&format!(
                                 "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOpt'",
@@ -1013,8 +1013,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOptVacSym'",
                                 run.compound_id,
                             ))?,
+                            RunType::ORCAr2SCAN3cEOptVacSym12 => connection.prepare(&format!(
+                                "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOptVacSym11'",
+                                run.compound_id,
+                            ))?,
                             RunType::ORCAr2SCAN3cEOptSym11 => connection.prepare(&format!(
                                 "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOptSym'",
+                                run.compound_id,
+                            ))?,
+                            RunType::ORCAr2SCAN3cEOptSym12 => connection.prepare(&format!(
+                                "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOptSym11'",
                                 run.compound_id,
                             ))?,
                             _ => todo!(),
@@ -1177,6 +1185,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut statement = connection.prepare(
             " \
             SELECT * FROM molecules \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOptVacSym12') \
+            AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOptVacSym11' AND status == 'Received') \
+            ORDER BY rotatable_bonds ASC LIMIT 1 \
+            ",
+        )?;
+        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+            {
+                let query = format!(
+                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                                    molecule?.compound_id,
+                                    RunType::ORCAr2SCAN3cEOptVacSym12,
+                                    StatusType::Planned,
+                                    RemoteHostType::localhost,
+                                    "/dev/null/"
+                );
+                println!("{}", query);
+                connection.execute(&query, [])?;
+            }
+    }
+    {
+        let mut statement = connection.prepare(
+            " \
+            SELECT * FROM molecules \
             WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOptSym') \
             AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOpt' AND status == 'Received') \
             ORDER BY rotatable_bonds ASC LIMIT 1 \
@@ -1215,6 +1248,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
                                     molecule?.compound_id,
                                     RunType::ORCAr2SCAN3cEOptSym11,
+                                    StatusType::Planned,
+                                    RemoteHostType::localhost,
+                                    "/dev/null/"
+                );
+                println!("{}", query);
+                connection.execute(&query, [])?;
+            }
+    }
+    {
+        let mut statement = connection.prepare(
+            " \
+            SELECT * FROM molecules \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOptSym12') \
+            AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOptSym11' AND status == 'Received') \
+            ORDER BY rotatable_bonds ASC LIMIT 1 \
+            ",
+        )?;
+        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+            {
+                let query = format!(
+                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                                    molecule?.compound_id,
+                                    RunType::ORCAr2SCAN3cEOptSym12,
                                     StatusType::Planned,
                                     RemoteHostType::localhost,
                                     "/dev/null/"
@@ -1305,7 +1363,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    if gadi_queue_length < 5 {
+    /* if gadi_queue_length < 5 {
         {
             // CENSO
             let mut statement = connection.prepare(
@@ -1336,341 +1394,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Err(_) => {}
             }
         }
-    }
-
-    if planned_cpu < 5 {
-        // frozen prep
-        {
-            let mut statement = connection.prepare(
-                " \
-                SELECT * FROM molecules \
-                WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenMinEquilCENSO3E') \
-                AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'CENSO' AND status == 'Received') \
-                ORDER BY rotatable_bonds ASC LIMIT 1 \
-                ",
-            )?;
-            if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-                .next()
-                .ok_or(())
-            {
-                let query = format!(
-                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                    molecule?.compound_id,
-                    RunType::FrozenMinEquilCENSO3E,
-                    StatusType::Planned,
-                    RemoteHostType::localhost,
-                    "/dev/null/"
-                );
-                println!("{}", query);
-                connection.execute(&query, [])?;
-            }
-        }
-
-
-        /*{
-            // CREST
-            let mut statement = connection.prepare(
-                "\
-                    SELECT * FROM molecules \
-                    WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'CREST') \
-                    ORDER BY rotatable_bonds DESC, num_atoms DESC LIMIT 1\
-                ",
-            )?;
-
-            match serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-                .next()
-                .ok_or(())
-            {
-                Ok(molecule) => {
-                    let query = format!(
-                        "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                        molecule?.compound_id,
-                        RunType::CREST,
-                        StatusType::Planned,
-                        RemoteHostType::localhost,
-                        "/dev/null/"
-                    );
-                    println!("{}", query);
-                    connection.execute(&query, [])?;
-                }
-                Err(_) => {}
-            }
-        }*/
-
-        /*{
-            let mut statement = connection.prepare(
-                "\
-                    SELECT * FROM molecules \
-                    WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'VacuumCENSO') \
-                    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'VacuumCREST' AND status == 'Received') \
-                    ORDER BY rotatable_bonds ASC LIMIT 1\
-                ",
-            )?;
-
-            match serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-                .next()
-                .ok_or(())
-            {
-                Ok(molecule) => {
-                    let query = format!(
-                        "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                        molecule?.compound_id,
-                        RunType::VacuumCENSO,
-                        StatusType::Planned,
-                        RemoteHostType::localhost,
-                        "/dev/null/"
-                    );
-                    println!("{}", query);
-                    connection.execute(&query, [])?;
-                }
-                Err(_) => {}
-            }
-        }*/
-        /*{
-            let mut statement = connection.prepare(
-                "\
-                    SELECT * FROM molecules \
-                    WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenForwardCENSO3') \
-                    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenMinEquilCENSO3' AND status == 'Received') \
-                    ORDER BY rotatable_bonds DESC LIMIT 1\
-                ",
-            )?;
-
-            match serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-                .next()
-                .ok_or(())
-            {
-                Ok(molecule) => {
-                    let query = format!(
-                        "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                        molecule?.compound_id,
-                        RunType::FrozenForwardCENSO3,
-                        StatusType::Planned,
-                        RemoteHostType::localhost,
-                        "/dev/null/"
-                    );
-                    println!("{}", query);
-                    connection.execute(&query, [])?;
-                }
-                Err(_) => {}
-            }
-        }*/
-        /*for _ in 0..2 {
-            let mut statement = connection.prepare(
-                "\
-                    SELECT * FROM molecules \
-                    WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenReversedCENSO3') \
-                    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenForwardCENSO3') \
-                    AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'FrozenMinEquilCENSO3' AND status == 'Received') \
-                    ORDER BY rotatable_bonds DESC LIMIT 1\
-                ",
-            )?;
-
-            match serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-                .next()
-                .ok_or(())
-            {
-                Ok(molecule) => {
-                    let query = format!(
-                        "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                        molecule?.compound_id,
-                        RunType::FrozenReversedCENSO3,
-                        StatusType::Planned,
-                        RemoteHostType::localhost,
-                        "/dev/null/"
-                    );
-                    println!("{}", query);
-                    connection.execute(&query, [])?;
-                }
-                Err(_) => {}
-            }
-        }*/
-    }
-    /* for _ in 0..2 {
-        // VacuumCREST
-        let mut statement = connection.prepare(
-            "\
-                SELECT * FROM molecules \
-                WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'VacuumCREST') \
-                ORDER BY rotatable_bonds ASC LIMIT 1\
-            ",
-        )?;
-
-        match serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-            .next()
-            .ok_or(())
-        {
-            Ok(molecule) => {
-                let query = format!(
-                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                    molecule?.compound_id,
-                    RunType::VacuumCREST,
-                    StatusType::Planned,
-                    RemoteHostType::localhost,
-                    "/dev/null/"
-                );
-                println!("{}", query);
-                connection.execute(&query, [])?;
-            }
-            Err(_) => {}
-        }
-    }*/
-    if planned_gpu >= 5 {
-        return Ok(());
-    }
-
-    /*for _ in 0..2 {
-        let mut statement = connection.prepare("\
-        SELECT * FROM molecules \
-        WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedReversedGAFF') \
-        AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedForwardGAFF') \
-        AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedMinEquilGAFF' AND status == 'Received') \
-        ORDER BY rotatable_bonds ASC, num_atoms ASC LIMIT 1\
-    ")?;
-
-        match serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-            .next()
-            .ok_or(())
-        {
-            Ok(molecule) => {
-                let query = format!(
-                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                    molecule?.compound_id,
-                    RunType::RelaxedReversedGAFF,
-                    StatusType::Planned,
-                    RemoteHostType::localhost,
-                    "/dev/null/"
-                );
-                println!("{}", query);
-                connection.execute(&query, [])?;
-            }
-            Err(_) => {}
-        }
-    }*/
-
-    /*{
-        let mut statement = connection.prepare("\
-            SELECT * FROM molecules \
-            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedForwardGAFF') \
-            AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedMinEquilGAFF' AND status == 'Received') \
-            ORDER BY rotatable_bonds ASC, num_atoms ASC LIMIT 5\
-        ")?;
-        match serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-            .next()
-            .ok_or(())
-        {
-            Ok(molecule) => {
-                let query = format!(
-                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                    molecule?.compound_id,
-                    RunType::RelaxedForwardGAFF,
-                    StatusType::Planned,
-                    RemoteHostType::localhost,
-                    "/dev/null/"
-                );
-                println!("{}", query);
-                connection.execute(&query, [])?;
-            }
-            Err(_) => {}
-        }
-    }*/
-
-    /*{
-        let mut statement = connection.prepare(
-            " \
-            SELECT * FROM molecules \
-            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedForwardGAFF50') \
-            ORDER BY rotatable_bonds ASC LIMIT 1 \
-            ",
-        )?;
-        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-            .next()
-            .ok_or(())
-        {
-            let query = format!(
-                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                molecule?.compound_id,
-                RunType::RelaxedForwardGAFF50,
-                StatusType::Planned,
-                RemoteHostType::localhost,
-                "/dev/null/"
-            );
-            println!("{}", query);
-            connection.execute(&query, [])?;
-        }
-    }*/
-    /*{
-        let mut statement = connection.prepare(
-            " \
-            SELECT * FROM molecules \
-            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedForwardGAFF51') \
-            ORDER BY rotatable_bonds ASC LIMIT 1 \
-            ",
-        )?;
-        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-            .next()
-            .ok_or(())
-        {
-            let query = format!(
-                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                molecule?.compound_id,
-                RunType::RelaxedForwardGAFF51,
-                StatusType::Planned,
-                RemoteHostType::localhost,
-                "/dev/null/"
-            );
-            println!("{}", query);
-            connection.execute(&query, [])?;
-        }
-    }*/
-    /*{
-        let mut statement = connection.prepare(
-        " \
-            SELECT * FROM molecules \
-            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedReversedGAFF50') \
-            ORDER BY rotatable_bonds ASC LIMIT 1 \
-            ",
-        )?;
-        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-            .next()
-            .ok_or(())
-        {
-            let query = format!(
-                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                molecule?.compound_id,
-                RunType::RelaxedReversedGAFF50,
-                StatusType::Planned,
-                RemoteHostType::localhost,
-                "/dev/null/"
-            );
-            println!("{}", query);
-            connection.execute(&query, [])?;
-        }
-    }*/
-    /*{
-        let mut statement = connection.prepare(
-            " \
-            SELECT * FROM molecules \
-            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'RelaxedReversedGAFF51') \
-            ORDER BY rotatable_bonds ASC LIMIT 1 \
-            ",
-        )?;
-        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
-            .next()
-            .ok_or(())
-        {
-            let query = format!(
-                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                molecule?.compound_id,
-                RunType::RelaxedReversedGAFF51,
-                StatusType::Planned,
-                RemoteHostType::localhost,
-                "/dev/null/"
-            );
-            println!("{}", query);
-            connection.execute(&query, [])?;
-        }
-    }*/
+    } */
 
     Ok(())
 }
