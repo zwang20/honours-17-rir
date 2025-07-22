@@ -123,12 +123,16 @@ enum RunType {
     ORCAr2SCAN3cEOptSym2,
     ORCAr2SCAN3cEOptSym11,
     ORCAr2SCAN3cEOptSym12,
+    ORCAr2SCAN3cEOptSym13,
+    ORCAr2SCAN3cEOptSym14,
     ORCAr2SCAN3cEVTOpt,
     ORCAr2SCAN3cEOptVac,
     ORCAr2SCAN3cEOptVacSym,
     ORCAr2SCAN3cEOptVacSym2,
     ORCAr2SCAN3cEOptVacSym11,
     ORCAr2SCAN3cEOptVacSym12,
+    ORCAr2SCAN3cEOptVacSym13,
+    ORCAr2SCAN3cEOptVacSym14,
     ORCAr2SCAN3cEVTOptVac,
 }
 
@@ -377,7 +381,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // gadi
-    {
+    /*{
         println!("Updating gadi");
         let gadi_raw_json = std::fs::File::create("server/gadi_raw.json")?;
         let output = std::process::Command::new("ssh")
@@ -405,7 +409,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map(|i| i.Job_Name.parse::<u32>().unwrap())
             .collect::<Vec<u32>>(),
         );
-    }
+    }*/
 
     // setonix
     {
@@ -532,11 +536,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptSym)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptSym11)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptSym12)
+                                || (run.run_type == RunType::ORCAr2SCAN3cEOptSym13)
+                                || (run.run_type == RunType::ORCAr2SCAN3cEOptSym14)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptVacSym)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptVacSym2)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptVacSym11)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOptVacSym12)
-                            ))
+                                || (run.run_type == RunType::ORCAr2SCAN3cEOptVacSym13)
+                                || (run.run_type == RunType::ORCAr2SCAN3cEOptVacSym14)))
                     {
                         let output = connection.execute(
                             &format!(
@@ -600,7 +607,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         katana2_cpu_queue_length += 1;
                     } */
                     else if ((setonix_queue_length < 10) && (setonix_job_count < 10))
-                        && ((run.run_type == RunType::CENSO))
+                        && (run.run_type == RunType::CENSO)
                     {
                         connection.execute(
                             &format!(
@@ -999,7 +1006,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             _ => todo!(),
                         }
                     }
-                    RunType::ORCAr2SCAN3cEOptSym | RunType::ORCAr2SCAN3cEOptVacSym | RunType::ORCAr2SCAN3cEOptVacSym2 | RunType::ORCAr2SCAN3cEOptVacSym11 | RunType::ORCAr2SCAN3cEOptSym11 | RunType::ORCAr2SCAN3cEOptVacSym12 | RunType::ORCAr2SCAN3cEOptSym12 => {
+                    RunType::ORCAr2SCAN3cEOptSym
+                    | RunType::ORCAr2SCAN3cEOptVacSym
+                    | RunType::ORCAr2SCAN3cEOptVacSym2
+                    | RunType::ORCAr2SCAN3cEOptVacSym11
+                    | RunType::ORCAr2SCAN3cEOptSym11
+                    | RunType::ORCAr2SCAN3cEOptVacSym12
+                    | RunType::ORCAr2SCAN3cEOptSym12
+                    | RunType::ORCAr2SCAN3cEOptVacSym13
+                    | RunType::ORCAr2SCAN3cEOptSym13
+                    | RunType::ORCAr2SCAN3cEOptVacSym14
+                    | RunType::ORCAr2SCAN3cEOptSym14 => {
                         let mut statement = match &run.run_type {
                             RunType::ORCAr2SCAN3cEOptSym => connection.prepare(&format!(
                                 "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOpt'",
@@ -1017,12 +1034,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOptVacSym11'",
                                 run.compound_id,
                             ))?,
+                            RunType::ORCAr2SCAN3cEOptVacSym13 => connection.prepare(&format!(
+                                "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOptVacSym12'",
+                                run.compound_id,
+                            ))?,
+                            RunType::ORCAr2SCAN3cEOptVacSym14 => connection.prepare(&format!(
+                                "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOptVacSym13'",
+                                run.compound_id,
+                            ))?,
                             RunType::ORCAr2SCAN3cEOptSym11 => connection.prepare(&format!(
                                 "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOptSym'",
                                 run.compound_id,
                             ))?,
                             RunType::ORCAr2SCAN3cEOptSym12 => connection.prepare(&format!(
                                 "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOptSym11'",
+                                run.compound_id,
+                            ))?,
+                            RunType::ORCAr2SCAN3cEOptSym13 => connection.prepare(&format!(
+                                "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOptSym12'",
+                                run.compound_id,
+                            ))?,
+                            RunType::ORCAr2SCAN3cEOptSym14 => connection.prepare(&format!(
+                                "SELECT * FROM runs WHERE compound_id == '{}' AND run_type = 'ORCAr2SCAN3cEOptSym13'",
                                 run.compound_id,
                             ))?,
                             _ => todo!(),
@@ -1168,18 +1201,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
             .next()
             .ok_or(())
-            {
-                let query = format!(
-                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                                    molecule?.compound_id,
-                                    RunType::ORCAr2SCAN3cEOptVacSym11,
-                                    StatusType::Planned,
-                                    RemoteHostType::localhost,
-                                    "/dev/null/"
-                );
-                println!("{}", query);
-                connection.execute(&query, [])?;
-            }
+        {
+            let query = format!(
+                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                molecule?.compound_id,
+                RunType::ORCAr2SCAN3cEOptVacSym11,
+                StatusType::Planned,
+                RemoteHostType::localhost,
+                "/dev/null/"
+            );
+            println!("{}", query);
+            connection.execute(&query, [])?;
+        }
     }
     {
         let mut statement = connection.prepare(
@@ -1193,18 +1226,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
             .next()
             .ok_or(())
-            {
-                let query = format!(
-                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                                    molecule?.compound_id,
-                                    RunType::ORCAr2SCAN3cEOptVacSym12,
-                                    StatusType::Planned,
-                                    RemoteHostType::localhost,
-                                    "/dev/null/"
-                );
-                println!("{}", query);
-                connection.execute(&query, [])?;
-            }
+        {
+            let query = format!(
+                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                molecule?.compound_id,
+                RunType::ORCAr2SCAN3cEOptVacSym12,
+                StatusType::Planned,
+                RemoteHostType::localhost,
+                "/dev/null/"
+            );
+            println!("{}", query);
+            connection.execute(&query, [])?;
+        }
+    }
+    {
+        let mut statement = connection.prepare(
+            " \
+            SELECT * FROM molecules \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOptVacSym13') \
+            AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOptVacSym12' AND status == 'Received') \
+            ORDER BY rotatable_bonds ASC LIMIT 1 \
+            ",
+        )?;
+        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+        {
+            let query = format!(
+                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                molecule?.compound_id,
+                RunType::ORCAr2SCAN3cEOptVacSym13,
+                StatusType::Planned,
+                RemoteHostType::localhost,
+                "/dev/null/"
+            );
+            println!("{}", query);
+            connection.execute(&query, [])?;
+        }
     }
     {
         let mut statement = connection.prepare(
@@ -1218,18 +1276,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
             .next()
             .ok_or(())
-            {
-                let query = format!(
-                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                                    molecule?.compound_id,
-                                    RunType::ORCAr2SCAN3cEOptSym,
-                                    StatusType::Planned,
-                                    RemoteHostType::localhost,
-                                    "/dev/null/"
-                );
-                println!("{}", query);
-                connection.execute(&query, [])?;
-            }
+        {
+            let query = format!(
+                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                molecule?.compound_id,
+                RunType::ORCAr2SCAN3cEOptSym,
+                StatusType::Planned,
+                RemoteHostType::localhost,
+                "/dev/null/"
+            );
+            println!("{}", query);
+            connection.execute(&query, [])?;
+        }
     }
     {
         let mut statement = connection.prepare(
@@ -1243,18 +1301,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
             .next()
             .ok_or(())
-            {
-                let query = format!(
-                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                                    molecule?.compound_id,
-                                    RunType::ORCAr2SCAN3cEOptSym11,
-                                    StatusType::Planned,
-                                    RemoteHostType::localhost,
-                                    "/dev/null/"
-                );
-                println!("{}", query);
-                connection.execute(&query, [])?;
-            }
+        {
+            let query = format!(
+                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                molecule?.compound_id,
+                RunType::ORCAr2SCAN3cEOptSym11,
+                StatusType::Planned,
+                RemoteHostType::localhost,
+                "/dev/null/"
+            );
+            println!("{}", query);
+            connection.execute(&query, [])?;
+        }
     }
     {
         let mut statement = connection.prepare(
@@ -1268,18 +1326,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
             .next()
             .ok_or(())
-            {
-                let query = format!(
-                    "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
-                                    molecule?.compound_id,
-                                    RunType::ORCAr2SCAN3cEOptSym12,
-                                    StatusType::Planned,
-                                    RemoteHostType::localhost,
-                                    "/dev/null/"
-                );
-                println!("{}", query);
-                connection.execute(&query, [])?;
-            }
+        {
+            let query = format!(
+                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                molecule?.compound_id,
+                RunType::ORCAr2SCAN3cEOptSym12,
+                StatusType::Planned,
+                RemoteHostType::localhost,
+                "/dev/null/"
+            );
+            println!("{}", query);
+            connection.execute(&query, [])?;
+        }
+    }
+    {
+        let mut statement = connection.prepare(
+            " \
+            SELECT * FROM molecules \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOptSym13') \
+            AND compound_id IN (SELECT compound_id FROM runs WHERE run_type == 'ORCAr2SCAN3cEOptSym12' AND status == 'Received') \
+            ORDER BY rotatable_bonds ASC LIMIT 1 \
+            ",
+        )?;
+        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+        {
+            let query = format!(
+                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                molecule?.compound_id,
+                RunType::ORCAr2SCAN3cEOptSym13,
+                StatusType::Planned,
+                RemoteHostType::localhost,
+                "/dev/null/"
+            );
+            println!("{}", query);
+            connection.execute(&query, [])?;
+        }
     }
     if planned_cpu < 5 {
         // frozen prep
