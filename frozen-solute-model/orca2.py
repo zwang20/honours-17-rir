@@ -20,6 +20,15 @@ cd "$PBS_O_WORKDIR/$PBS_ARRAY_INDEX"
 orca orca.inp > orca.out
 """
 
+orca_inp_template_sym_3 = """! {functional} {basis}
+%sym
+    SymThresh 1.0e-3
+    SymRelaxOpt True
+    CleanUpGradient True
+end
+* xyzfile 0 1 {input}
+"""
+
 orca_inp_template_sym = """! {functional} {basis}
 %sym
     SymThresh 1.0e-2
@@ -76,20 +85,16 @@ elif functional == "ORCAr2SCAN3cEOptVacSym2":
     orca_inp_template = orca_inp_template_sym
     basis = "VeryTightSCF TightOpt Freq"
     functional = "r2SCAN-3c"
-elif functional == "ORCAr2SCAN3cEOptSym11":
+elif functional in ("ORCAr2SCAN3cEOptSym11", "ORCAr2SCAN3cEOptVacSym11", "ORCAr2SCAN3cEOptSym13", "ORCAr2SCAN3cEOptVacSym13"):
     orca_inp_template = orca_inp_template_sym
-    basis = "TightSCF TightOpt Freq DefGrid3"
+    basis = "TightSCF TightOpt Freq DefGrid3 CHELPG"
     functional = "r2SCAN-3c"
-elif functional == "ORCAr2SCAN3cEOptVacSym11":
-    orca_inp_template = orca_inp_template_sym
-    basis = "TightSCF TightOpt Freq DefGrid3"
-    functional = "r2SCAN-3c"
-elif functional == "ORCAr2SCAN3cEOptSym12":
+elif functional in ("ORCAr2SCAN3cEOptSym12", "ORCAr2SCAN3cEOptVacSym12"):
     orca_inp_template = orca_inp_template_sym_2
     basis = "TightSCF TightOpt Freq DefGrid3 CHELPG"
     functional = "r2SCAN-3c"
-elif functional == "ORCAr2SCAN3cEOptVacSym12":
-    orca_inp_template = orca_inp_template_sym_2
+elif functional in ("ORCAr2SCAN3cEOptSym14", "ORCAr2SCAN3cEOptVacSym14"):
+    orca_inp_template = orca_inp_template_sym_3
     basis = "TightSCF TightOpt Freq DefGrid3 CHELPG"
     functional = "r2SCAN-3c"
 else:
