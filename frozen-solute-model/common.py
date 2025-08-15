@@ -274,6 +274,33 @@ module add crest
 crest {mobley_id}.xyz --alpb water --chrg 0 --uhf 0 -T 1 --noreftopo > crest.log
 """
 
+katana_crest_4 = """#!/usr/bin/bash
+#PBS -l walltime=12:00:00
+#PBS -l mem=4Gb
+#PBS -l ncpus=4
+#PBS -j oe
+set -e
+
+lscpu
+
+cd "$PBS_O_WORKDIR"
+
+/home/z5358697/software/crest/crest {mobley_id}.xyz --alpb water --chrg 0 --uhf 0 -T 4 --noreftopo --len x4 > crest.out
+"""
+
+
+setonix_crest_4 = """#!/usr/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=16G
+#SBATCH --time=24:00:00
+
+set -e
+
+/software/projects/pawsey0265/mwang1/crest/crest {mobley_id}.xyz --alpb water --chrg 0 --uhf 0 -T 4 --noreftopo --len x4 > crest.out
+"""
+
 katana_vacuum_crest = """#!/usr/bin/bash
 #PBS -l walltime=12:00:00
 #PBS -l mem=1Gb
@@ -288,6 +315,20 @@ cd "${{PBS_O_WORKDIR}}"
 module add crest
 
 crest {mobley_id}.xyz --chrg 0 --uhf 0 -T 1 --noreftopo > crest.log
+"""
+
+katana_vacuum_crest_4 = """#!/usr/bin/bash
+#PBS -l walltime=12:00:00
+#PBS -l mem=4Gb
+#PBS -l ncpus=4
+#PBS -j oe
+set -e
+
+lscpu
+
+cd "$PBS_O_WORKDIR"
+
+/home/z5358697/software/crest/crest {mobley_id}.xyz --chrg 0 --uhf 0 -T 4 --noreftopo --len x4 > crest.out
 """
 
 katana_censo = """#!/usr/bin/bash
@@ -332,6 +373,21 @@ setonix_censo = """#!/usr/bin/bash
 #SBATCH --mem={mem}G
 #SBATCH --partition=long
 #SBATCH --time=96:00:00
+
+set -e
+
+module add python/3.11.6
+
+yes | /software/projects/pawsey0265/mwang1/censo_screwed/bin/censo --cleanup_all > censo_cleanup.out
+/software/projects/pawsey0265/mwang1/censo_screwed/bin/censo -i crest_conformers.xyz --maxcores {ncpus} -O 1 > censo.out
+"""
+
+setonix_censo = """#!/usr/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task={ncpus}
+#SBATCH --mem={mem}G
+#SBATCH --time=24:00:00
 
 set -e
 
