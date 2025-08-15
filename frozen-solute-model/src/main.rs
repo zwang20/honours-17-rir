@@ -112,9 +112,13 @@ enum RunType {
     // FrozenBarCENSO5,
     FrozenBarCENSO5E,
     CREST,
+    CREST4,
     CENSO,
+    CENSO4,
     VacuumCREST,
+    VacuumCREST4,
     VacuumCENSO,
+    VacuumCENSO4,
     ORCA,
     ORCAr2SCAN3c,
     ORCAr2SCAN3cE,
@@ -213,7 +217,7 @@ fn receive_files(
 
     run_program(vec![
         "rsync",
-        "-rz",
+        "-az",
         &format!("{}:{}", remote_host.get_data_host(), remote_path),
         &format!("data/{}", local_path),
     ])?;
@@ -529,6 +533,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         || ((katana_cpu_queue_length < 10)
                             && ((run.run_type == RunType::CREST)
                                 || (run.run_type == RunType::VacuumCREST)
+                                || (run.run_type == RunType::VacuumCREST4)
                                 || (run.run_type == RunType::ORCAr2SCAN3cE)
                                 || (run.run_type == RunType::FrozenMinEquilCENSO3E)
                                 || (run.run_type == RunType::ORCAr2SCAN3cEOpt)
@@ -606,8 +611,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         println!("pick remote host {:?}", output);
                         katana2_cpu_queue_length += 1;
                     } */
-                    else if ((setonix_queue_length < 10) && (setonix_job_count < 10))
-                        && (run.run_type == RunType::CENSO)
+                    else if ((setonix_queue_length < 10) && (setonix_job_count < 50))
+                        && ((run.run_type == RunType::CENSO) || (run.run_type == RunType::CREST4))
                     {
                         connection.execute(
                             &format!(
@@ -687,7 +692,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             &format!("{:?}", run.run_type),
                         ])?;
                     }
-                    RunType::CREST | RunType::VacuumCREST => {
+                    RunType::CREST
+                    | RunType::VacuumCREST
+                    | RunType::CREST4
+                    | RunType::VacuumCREST4 => {
                         run_program(vec![
                             "python",
                             "mol2-to-xyz.py",
@@ -695,22 +703,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             &format!("data/{}/{}.xyz", run.local_path, run.compound_id),
                         ])?;
 
-                        if run.run_type == RunType::CREST {
-                            run_program(vec![
+                        match &run.run_type {
+                            RunType::CREST => run_program(vec![
                                 "python",
                                 "crest.py",
                                 &format!("data/{}/{}", run.local_path, run.local_path),
                                 &run.compound_id,
-                            ])?;
-                        } else if run.run_type == RunType::VacuumCREST {
-                            run_program(vec![
+                            ])?,
+                            RunType::VacuumCREST => run_program(vec![
                                 "python",
                                 "vacuum-crest.py",
                                 &format!("data/{}/{}", run.local_path, run.local_path),
                                 &run.compound_id,
-                            ])?;
-                        } else {
-                            panic!()
+                            ])?,
+                            RunType::CREST4 => {
+                                if run.remote_host == RemoteHostType::katana {
+                                    run_program(vec![
+                                        "python",
+                                        "crest4.py",
+                                        &format!("data/{}/{}", run.local_path, run.local_path),
+                                        &run.compound_id,
+                                    ])?
+                                } else if run.remote_host == RemoteHostType::setonix {
+                                    run_program(vec![
+                                        "python",
+                                        "setonix-crest4.py",
+                                        &format!("data/{}/{}", run.local_path, run.local_path),
+                                        &run.compound_id,
+                                    ])?
+                                }
+                            }
+                            RunType::VacuumCREST4 => run_program(vec![
+                                "python",
+                                "vacuum-crest4.py",
+                                &format!("data/{}/{}", run.local_path, run.local_path),
+                                &run.compound_id,
+                            ])?,
+                            _ => todo!(),
                         }
                     }
                     RunType::CENSO | RunType::VacuumCENSO => {
@@ -1138,6 +1167,57 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     println!("Generating Jobs");
+    {
+        // VacuumCREST4
+        let mut statement = connection.prepare(
+            " \
+            SELECT * FROM molecules \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'VacuumCREST4') \
+            ORDER BY rotatable_bonds ASC LIMIT 1 \
+            ",
+        )?;
+        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+        {
+            let query = format!(
+                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                molecule?.compound_id,
+                RunType::VacuumCREST4,
+                StatusType::Planned,
+                RemoteHostType::localhost,
+                "/dev/null/"
+            );
+            println!("{}", query);
+            connection.execute(&query, [])?;
+        }
+    }
+
+    {
+        // CREST4
+        let mut statement = connection.prepare(
+            " \
+            SELECT * FROM molecules \
+            WHERE compound_id NOT IN (SELECT compound_id FROM runs WHERE run_type == 'CREST4') \
+            ORDER BY rotatable_bonds ASC LIMIT 1 \
+            ",
+        )?;
+        if let Ok(molecule) = serde_rusqlite::from_rows::<Molecule>(statement.query([])?)
+            .next()
+            .ok_or(())
+        {
+            let query = format!(
+                "INSERT INTO runs (compound_id, run_type, status, remote_host, remote_path) VALUES ('{}', '{:?}', '{:?}', '{:?}', '{}')",
+                molecule?.compound_id,
+                RunType::CREST4,
+                StatusType::Planned,
+                RemoteHostType::localhost,
+                "/dev/null/"
+            );
+            println!("{}", query);
+            connection.execute(&query, [])?;
+        }
+    }
 
     {
         let mut statement = connection.prepare(
