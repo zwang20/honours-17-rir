@@ -12,7 +12,31 @@ cur = con.cursor()
 
 
 def main():
-    # returns a path if invalid path is found, else None
+    """
+    returns a path if invalid path is found, else None
+    """
+
+    # CREST4
+    crest_4_paths = cur.execute(
+        "SELECT local_path FROM runs WHERE run_type = 'CREST4' AND status != 'Planned' AND status != 'Running' AND status != 'Failed'"
+    ).fetchall()
+    for i in crest_4_paths:
+        crest_4_path = i[0]
+        crest_subprocess = subprocess.run(["grep", "CREST terminated normally.", f"data/{crest_4_path}/crest.out"], check=False, capture_output=True)
+        if crest_subprocess.returncode:
+            return crest_4_path
+
+    # VacuumCREST4
+    vacuum_crest_4_paths = cur.execute(
+        "SELECT local_path FROM runs WHERE run_type = 'VacuumCREST4' AND status != 'Planned' AND status != 'Running' AND status != 'Failed'"
+    ).fetchall()
+    for i in vacuum_crest_4_paths:
+        vacuum_crest_4_path = i[0]
+        crest_subprocess = subprocess.run(["grep", "CREST terminated normally.", f"data/{vacuum_crest_4_path}/crest.out"], check=False, capture_output=True)
+        if crest_subprocess.returncode:
+            return vacuum_crest_4_path
+
+    exit(1)
 
     censo_paths = cur.execute(
         "SELECT local_path FROM runs WHERE run_type = 'CENSO' AND status != 'Planned' AND status != 'Running' AND status != 'Failed'"
